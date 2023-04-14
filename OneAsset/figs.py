@@ -50,20 +50,53 @@ def lifecycle(model):
     sim = model.sim
 
     # b. figure
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(1, 1, 1)
 
-    simvarlist = [('m','$m_t$'),
-                  ('c','$c_t$'),
-                  ('a','$a_t$')]
+    # Settings
+    ax.grid(b=True, which='major', linestyle='-', linewidth=0.5, color='0.9')
+    ax.set_xlim([0.0, par.T - 1])
+    ax.set_xlabel('Age', size=13)
+    ax.set_ylabel('Simulation Variable', size=13)
+
+    simvarlist = [('m', '$m_t$', '-'),
+                  ('c', '$c_t$', '--'),
+                  ('a', '$a_t$', '-.')]
 
     age = np.arange(par.T)
-    ax = fig.add_subplot(1,1,1)
-    
-    for simvar,simvarlatex in simvarlist:
 
-        simdata = getattr(sim,simvar)
-        ax.plot(age,np.mean(simdata,axis=1),lw=2,label=simvarlatex)
-    
-    ax.legend(frameon=True)
+    for simvar, simvarlatex, linestyle in simvarlist:
+        simdata = getattr(sim, simvar)
+        ax.plot(age, np.mean(simdata, axis=1), lw=2, label=simvarlatex, linestyle=linestyle, color='0.4')
+
+    ax.legend(frameon=True, edgecolor='k', facecolor='white', framealpha=1, fancybox=False, loc=2)
     ax.grid(True)
-    ax.set_xlabel('age')
+
+    
+def plot_age_consumption(model):
+    par = model.par
+    sol = model.sol
+    
+    fig = plt.figure(figsize=(8, 5))
+    ax = fig.add_subplot(1, 1, 1)
+    
+    median_p_index = par.Np // 2
+
+    
+    simvarlist = [('m', '$m_t$', '-'),
+                  ('c', '$c_t$', '--'),
+                  ('a', '$a_t$', '-.')]
+
+    for age in range(par.T):
+        ax.plot(par.grid_m, sol.c[age, median_p_index, :], label=f'age = {age}', linestyle='-', color='0.4')
+
+    ax.set_xlabel(r'Cash-on-hand, $m_t$',size=13)
+    ax.set_ylabel(r'Consumption, $c(m_t)$',size=13)
+    ax.set_xlim([np.min(par.grid_m), 5])
+    ax.set_ylim([0, 5])
+    ax.set_title(r'Consumption function')
+
+    ax.legend(frameon=True, edgecolor='k', facecolor='white', framealpha=1, fancybox=False)
+    ax.grid(visible=True, which='major', linestyle='-', linewidth=0.5, color='0.9')
+
+    plt.show()

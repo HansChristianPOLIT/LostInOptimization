@@ -23,7 +23,6 @@ from consav.misc import elapsed
 import utility
 import last_period
 import vfi
-#import post_decision
 import simulate
 import figs
 
@@ -56,7 +55,7 @@ class OneAssetModelClass(ModelClass):
         par = self.par
 
         # a. solution method
-        par.solmethod = 'nvfi'
+        par.solmethod = 'vfi'
 
         # b. horizon 
         par.T = 5 # Time horizon
@@ -161,37 +160,18 @@ class OneAssetModelClass(ModelClass):
 
                 # b. all other periods
                 else:
-
-                    # i. compute post-decision functions
-                    t0_w = time.time()
-
-                    compute_w, compute_q = False,False
-                    #if par.solmethod in ['nvfi']: compute_w = True
-                    #elif par.solmethod in ['egm']: compute_q = True
-
-                    if compute_w or compute_q:
-
-                        if par.do_simple_w:
-                            post_decision.compute_wq_simple(t,sol,par,compute_w=compute_w,compute_q=compute_q)
-                        else:
-                            post_decision.compute_wq(t,sol,par,compute_w=compute_w,compute_q=compute_q)
-
                     t1_w = time.time()
 
-                    # ii. solve Bellman equation 
                     if par.solmethod == 'vfi':
                         vfi.solve_bellman(t,sol,par)
-                    #elif par.solmethod == 'nvfi':
-                    #    nvfi.solve_bellman(t,sol,par)
-                    #elif par.solmethod == 'egm':
-                    #    egm.solve_bellman(t,sol,par)
+
                     else:
                         raise ValueError(f'Unknown solution method, {par.solmethod}')
                 # c. print
                 if par.do_print:
                     msg = f' t = {t} solved in {elapsed(t0)}'
                     if t < par.T-1:
-                        msg += f' (w: {elapsed(t0_w,t1_w)})'
+                        msg += f' (w: {elapsed(t1_w)})'
                     print(msg)
 
     ############
@@ -251,6 +231,9 @@ class OneAssetModelClass(ModelClass):
         figs.consumption_function_interact(self)
           
     def lifecycle(self):
-        figs.lifecycle(self)     
+        figs.lifecycle(self)
+        
+    def plot_age_consumption(self):
+        figs.plot_age_consumption(self)
             
         
