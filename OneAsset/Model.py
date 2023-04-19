@@ -67,6 +67,7 @@ class OneAssetModelClass(ModelClass):
         # d. returns and iccome
         par.R = 1.03
         par.sigma_psi = 0.1 # SD of permanent income process
+        # think of vector of points and vector of weights to approximate distribution
         par.Npsi = 6 # no. of quadrature points to approximate distribution of permanent income shock
         par.sigma_xi = 0.1 # SD of transitory income process
         par.Nxi = 6 # no. of quadrature points to approximate distribution of transitory income shock
