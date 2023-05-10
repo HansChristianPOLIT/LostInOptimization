@@ -203,23 +203,23 @@ class BufferStockModelClass(ModelClass):
                         msg += f' (w: {elapsed(t0_w,t1_w)})'                
                     print(msg)
 
-    def solve_cpp(self):
-        """ solve the model using egm written in C++ """
+    # def solve_cpp(self):
+    #     """ solve the model using egm written in C++ """
 
-        par = self.par
-        sol = self.sol
+    #     par = self.par
+    #     sol = self.sol
 
-        # a. solve by EGM
-        t0 = time.time()
+    #     # a. solve by EGM
+    #     t0 = time.time()
        
-        if par.solmethod in ['egm']:
-            self.cpp.solve(par,sol)
-        else:
-            raise ValueError(f'unknown cpp solution method, {par.solmethod}')            
+    #     if par.solmethod in ['egm']:
+    #         self.cpp.solve(par,sol)
+    #     else:
+    #         raise ValueError(f'unknown cpp solution method, {par.solmethod}')            
         
-        t1 = time.time()
+    #     t1 = time.time()
 
-        return t0,t1
+    #     return t0,t1
 
     ############
     # simulate #
