@@ -110,11 +110,8 @@ def simulation(models,postfix=''):
     txt += '\\\\ \n'
     lines.append(txt)
 
-    if models[0].par.do_2d:
-        txt = 'Adjuster share ($d^1_t \\neq n^1_t \\lor d^2_t \\neq n^2_t$)'
-    else:
-        txt = 'Adjuster share ($d_t \\neq n_t$)'
-
+    txt = 'Adjuster share ($d_t \\neq n_t$)'
+    
     for model in models:
         txt += f' & {np.mean(model.sim.discrete > 0):.3f}'
     txt += '\\\\ \n'
@@ -132,45 +129,17 @@ def simulation(models,postfix=''):
     txt += '\\\\ \n'  
     lines.append(txt)
 
-    if models[0].par.do_2d:
-    
-        txt = 'Average durable stock I ($d^1_t$)'
-        for model in models:
-            txt += f' & {np.mean(model.sim.d1):.3f}'
-        txt += '\\\\ \n'
-        lines.append(txt)
+    txt = 'Average durable stock ($d_t$)'
+    for model in models:
+        txt += f' & {np.mean(model.sim.d):.3f}'
+    txt += '\\\\ \n'
+    lines.append(txt)
 
-        txt = 'Variance of durable stock I ($d^1_t$)'
-        for model in models:
-            txt += f' & {np.var(model.sim.d1):.3f}'
-        txt += '\\\\ \n'       
-        lines.append(txt)
-
-        txt = 'Average durable stock II ($d^2_t$)'
-        for model in models:
-            txt += f' & {np.mean(model.sim.d2):.3f}'
-        txt += '\\\\ \n'
-        lines.append(txt)
-
-        txt = 'Variance of durable stock II ($d^2_t$)'
-        for model in models:
-            txt += f' & {np.var(model.sim.d2):.3f}'
-        txt += '\\\\ \n'       
-        lines.append(txt)
-
-    else:
-
-        txt = 'Average durable stock ($d_t$)'
-        for model in models:
-            txt += f' & {np.mean(model.sim.d):.3f}'
-        txt += '\\\\ \n'
-        lines.append(txt)
-
-        txt = 'Variance of durable stock ($d_t$)'
-        for model in models:
-            txt += f' & {np.var(model.sim.d):.3f}'
-        txt += '\\\\ \n'       
-        lines.append(txt)
+    txt = 'Variance of durable stock ($d_t$)'
+    for model in models:
+        txt += f' & {np.var(model.sim.d):.3f}'
+    txt += '\\\\ \n'       
+    lines.append(txt)
 
     with open(f'tabs_simulation{postfix}.tex', 'w') as txtfile:
         txtfile.writelines(lines)    

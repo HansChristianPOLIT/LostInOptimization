@@ -281,23 +281,7 @@ def lifecycle_compare(model1,latex1,model2,latex2,do_euler_errors=False):
     # b. figure
     fig = plt.figure(figsize=(12,16))
 
-    if par.do_2d:
-
-        simvarlist = [('p','$p_t$',None),
-                    ('m','$m_t$',None),
-                    ('c','$c_t$',None),
-                    ('a','$a_t$',None),
-                    ('n1','$n^1_t$',None),
-                    ('n2','$n^2_t$',None),            
-                    ('d1','$d^1_t$',None),
-                    ('d2','$d^2_t$',None),
-                    ('discrete','adjuster share (both)',1),
-                    ('discrete','adjuster share ($d_1$)',2),
-                    ('discrete','adjuster share ($d_2$)',3)]
-    
-    else:
-
-        simvarlist = [('p','$p_t$',None),
+    simvarlist = [('p','$p_t$',None),
                     ('n','$n_t$',None),
                     ('m','$m_t$',None),
                     ('c','$c_t$',None),
@@ -311,11 +295,7 @@ def lifecycle_compare(model1,latex1,model2,latex2,do_euler_errors=False):
     age = np.arange(par.T)
     for i,(simvar,simvarlatex,j) in enumerate(simvarlist):
 
-        if par.do_2d:
-            ax = fig.add_subplot(6,2,i+1)
-            fig.subplots_adjust(hspace=0.5)
-        else:
-            ax = fig.add_subplot(4,2,i+1)
+        ax = fig.add_subplot(4,2,i+1)
 
         if simvar == 'euler_error_rel':
 
@@ -324,14 +304,6 @@ def lifecycle_compare(model1,latex1,model2,latex2,do_euler_errors=False):
 
             simdata = getattr(sim2,simvar)[:par.T-1,:]
             ax.plot(age[:-1],np.nanmean(simdata,axis=1),lw=2,label=latex2)
-
-        elif par.do_2d and simvar == 'discrete':
-
-            simdata = getattr(sim1,simvar)[:par.T,:]
-            ax.plot(age,np.mean(simdata == j,axis=1),lw=2,label=latex1)
-
-            simdata = getattr(sim2,simvar)[:par.T,:]
-            ax.plot(age,np.mean(simdata == j,axis=1),lw=2,label=latex2)
 
         else:
 

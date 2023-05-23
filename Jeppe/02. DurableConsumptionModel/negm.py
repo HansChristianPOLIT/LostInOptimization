@@ -2,7 +2,6 @@ import numpy as np
 from numba import njit, prange
 
 # consav
-from consav import linear_interp # for linear interpolation
 from consav import upperenvelope
 
 # local modules

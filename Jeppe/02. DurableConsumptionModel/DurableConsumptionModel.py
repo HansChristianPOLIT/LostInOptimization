@@ -20,14 +20,10 @@ import numpy as np
 
 # consav package
 from consav import ModelClass, jit # baseline model class and jit
-from consav import linear_interp # for linear interpolation
-from consav import golden_section_search # for optimization in 1D
 from consav.grids import nonlinspace # grids
 from consav.quadrature import create_PT_shocks # income shocks
 
 # local modules
-import utility
-import trans
 import last_period
 import post_decision
 import vfi
@@ -55,46 +51,15 @@ class DurableConsumptionModelClass(ModelClass):
         self.savefolder = 'saved'
 
         # d. list not-floats for safe type inference
-        self.not_floats = ['solmethod','T','t','simN','sim_seed','cppthreads',
+        self.not_floats = ['solmethod','T','t','simN','sim_seed',
                            'Npsi','Nxi','Nm','Np','Nn','Nx','Na','Nshocks',
-                           'do_2d','do_print','do_print_period','do_marg_u','do_simple_wq']
-        
-        # e. cpp
-        self.cpp_filename = 'cppfuncs/main.cpp'
-        self.cpp_options = {'compiler':'vs'}
+                           'do_print','do_print_period','do_marg_u','do_simple_wq']
 
-        # help for linting
-        self.cpp.compute_wq_nvfi = None
-        self.cpp.compute_wq_nvfi_2d = None
-        self.cpp.compute_wq_negm = None
-        self.cpp.compute_wq_negm_2d = None
-
-        self.cpp.solve_vfi_keep = None
-        self.cpp.solve_vfi_adj = None
-        
-        self.cpp.solve_vfi_2d_keep = None
-        self.cpp.solve_vfi_2d_adj_full = None
-        self.cpp.solve_vfi_2d_adj_d1 = None
-        self.cpp.solve_vfi_2d_adj_d2 = None
-
-        self.cpp.solve_nvfi_keep = None
-        self.cpp.solve_nvfi_adj = None
-        
-        self.cpp.solve_nvfi_2d_keep = None
-        self.cpp.solve_nvfi_2d_adj_full = None
-        self.cpp.solve_nvfi_2d_adj_d1 = None
-        self.cpp.solve_nvfi_2d_adj_d2 = None
-
-        self.cpp.solve_negm_keep = None
-        self.cpp.solve_negm_2d_keep = None
 
     def setup(self):
         """ set baseline parameters """
 
         par = self.par
-
-        # a. baseline parameters
-        par.do_2d = False
 
         # horizon
         par.T = 5
@@ -104,8 +69,6 @@ class DurableConsumptionModelClass(ModelClass):
         par.rho = 2.0
         par.alpha = 0.9
         par.d_ubar = 1e-2
-        par.d1_ubar = 1e-2
-        par.d2_ubar = 1e-2
 
         # returns and income
         par.R = 1.03
@@ -152,7 +115,6 @@ class DurableConsumptionModelClass(ModelClass):
         par.tol = 1e-8
         par.do_print = False
         par.do_print_period = False
-        par.cppthreads = 8
         par.do_simple_wq = False # not using optimized interpolation in C++
         par.do_marg_u = False # calculate marginal utility for use in egm
         
@@ -168,7 +130,7 @@ class DurableConsumptionModelClass(ModelClass):
         
         par = self.par
 
-        if par.solmethod in ['negm','negm_cpp','negm_2d_cpp']:
+        if par.solmethod in ['negm']:
             par.do_marg_u = True
 
         # a. states        
@@ -194,8 +156,6 @@ class DurableConsumptionModelClass(ModelClass):
         par.time_keep = np.zeros(par.T)
         par.time_adj = np.zeros(par.T)
         par.time_adj_full = np.zeros(par.T)
-        par.time_adj_d1 = np.zeros(par.T)
-        par.time_adj_d2 = np.zeros(par.T)
 
     def checksum(self,simple=False,T=1):
         """ calculate and print checksum """
@@ -204,36 +164,13 @@ class DurableConsumptionModelClass(ModelClass):
         sol = self.sol
 
         if simple:
-            if par.do_2d:
-                print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep_2d[0]):.8f}')
-                print(f'checksum, inv_v_adj_full: {np.mean(sol.inv_v_adj_full_2d[0]):.8f}')
-                print(f'checksum, inv_v_adj_d1_2d: {np.mean(sol.inv_v_adj_d1_2d[0]):.8f}')
-                print(f'checksum, inv_v_adj_d2_2d: {np.mean(sol.inv_v_adj_d2_2d[0]):.8f}')
-            else:
-                print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep[0]):.8f}')
-                print(f'checksum, inv_v_adj: {np.mean(sol.inv_v_adj[0]):.8f}')
+            print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep[0]):.8f}')
+            print(f'checksum, inv_v_adj: {np.mean(sol.inv_v_adj[0]):.8f}')
+                
             return
 
         print('')
         for t in range(T):
-            if par.do_2d:
-                
-                if t < par.T-1:
-                    print(f'checksum, inv_w: {np.mean(sol.inv_w_2d[t]):.8f}')
-                    print(f'checksum, q: {np.mean(sol.q_2d[t]):.8f}')
-
-                print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep_2d[t]):.8f}')
-                print(f'checksum, inv_v_adj_full: {np.mean(sol.inv_v_adj_full_2d[t]):.8f}')
-                print(f'checksum, inv_v_adj_d1_2d: {np.mean(sol.inv_v_adj_d1_2d[t]):.8f}')
-                print(f'checksum, inv_v_adj_d2_2d: {np.mean(sol.inv_v_adj_d2_2d[t]):.8f}')
-                print(f'checksum, inv_marg_u_keep: {np.mean(sol.inv_marg_u_keep_2d[t]):.8f}')
-                print(f'checksum, inv_marg_u_adj_full: {np.mean(sol.inv_marg_u_adj_full_2d[t]):.8f}')
-                print(f'checksum, inv_marg_u_adj_d1_2d: {np.mean(sol.inv_marg_u_adj_d1_2d[t]):.8f}')
-                print(f'checksum, inv_marg_u_adj_d2_2d: {np.mean(sol.inv_marg_u_adj_d2_2d[t]):.8f}')                
-                print('')
-
-            else:
-
                 if t < par.T-1:
                     print(f'checksum, inv_w: {np.mean(sol.inv_w[t]):.8f}')
                     print(f'checksum, q: {np.mean(sol.q[t]):.8f}')
@@ -246,6 +183,7 @@ class DurableConsumptionModelClass(ModelClass):
                 print(f'checksum, inv_v_adj: {np.mean(sol.inv_v_adj[t]):.8f}')
                 print(f'checksum, inv_marg_u_adj: {np.mean(sol.inv_marg_u_adj[t]):.8f}')
                 print('')
+
 
     #########
     # solve #
@@ -301,60 +239,23 @@ class DurableConsumptionModelClass(ModelClass):
         sol = self.sol
 
         # a. standard
-        if not par.do_2d: keep_shape = (par.T,par.Np,par.Nn,par.Nm)
-        else: keep_shape = (0,0,0,0)
+        keep_shape = (par.T,par.Np,par.Nn,par.Nm)
         
         sol.c_keep = np.zeros(keep_shape)
         sol.inv_v_keep = np.zeros(keep_shape)
         sol.inv_marg_u_keep = np.zeros(keep_shape)
 
-        if not par.do_2d: adj_shape = (par.T,par.Np,par.Nx)
-        else: adj_shape = (0,0,0)
+        adj_shape = (par.T,par.Np,par.Nx)
         sol.d_adj = np.zeros(adj_shape)
         sol.c_adj = np.zeros(adj_shape)
         sol.inv_v_adj = np.zeros(adj_shape)
         sol.inv_marg_u_adj = np.zeros(adj_shape)
             
-        if not par.do_2d: post_shape = (par.T-1,par.Np,par.Nn,par.Na)
-        else: post_shape = (0,0,0,0)
+        post_shape = (par.T-1,par.Np,par.Nn,par.Na)
         sol.inv_w = np.nan*np.zeros(post_shape)
         sol.q = np.nan*np.zeros(post_shape)
         sol.q_c = np.nan*np.zeros(post_shape)
         sol.q_m = np.nan*np.zeros(post_shape)
-
-        # b. 2d
-        if par.do_2d: keep_shape = (par.T,par.Np,par.Nn,par.Nn,par.Nm)
-        else: keep_shape = (0,0,0,0,0)
-        sol.c_keep_2d = np.zeros(keep_shape)
-        sol.inv_v_keep_2d = np.zeros(keep_shape)
-        sol.inv_marg_u_keep_2d = np.zeros(keep_shape)
-
-        if par.do_2d: adj_full_shape = (par.T,par.Np,par.Nx)
-        else: adj_full_shape = (0,0,0)
-        sol.d1_adj_full_2d = np.zeros(adj_full_shape)
-        sol.d2_adj_full_2d = np.zeros(adj_full_shape)
-        sol.c_adj_full_2d = np.zeros(adj_full_shape)
-        sol.inv_v_adj_full_2d = np.zeros(adj_full_shape)
-        sol.inv_marg_u_adj_full_2d = np.zeros(adj_full_shape)
-        
-        if par.do_2d: adj_part_shape = (par.T,par.Np,par.Nn,par.Nx)
-        else: adj_part_shape = (0,0,0,0)
-        sol.d1_adj_d1_2d = np.zeros(adj_part_shape)
-        sol.c_adj_d1_2d = np.zeros(adj_part_shape)
-        sol.inv_v_adj_d1_2d = np.zeros(adj_part_shape)
-        sol.inv_marg_u_adj_d1_2d = np.zeros(adj_part_shape)
-
-        sol.d2_adj_d2_2d = np.zeros(adj_part_shape)
-        sol.c_adj_d2_2d = np.zeros(adj_part_shape)
-        sol.inv_v_adj_d2_2d = np.zeros(adj_part_shape)
-        sol.inv_marg_u_adj_d2_2d = np.zeros(adj_part_shape)
-
-        if par.do_2d: post_shape = (par.T-1,par.Np,par.Nn,par.Nn,par.Na)
-        else: post_shape = (0,0,0,0,0)
-        sol.inv_w_2d = np.nan*np.zeros(post_shape)
-        sol.q_2d = np.nan*np.zeros(post_shape)
-        sol.q_c_2d = np.nan*np.zeros(post_shape)
-        sol.q_m_2d = np.nan*np.zeros(post_shape)
 
     def solve(self,do_assert=True):
         """ solve the model
@@ -365,7 +266,6 @@ class DurableConsumptionModelClass(ModelClass):
         
         """
 
-        if self.par.do_2d: return self.solve_2d()
         cpp = self.cpp
 
         tic = time.time()
@@ -401,11 +301,7 @@ class DurableConsumptionModelClass(ModelClass):
                     if par.solmethod in ['nvfi']:
                         post_decision.compute_wq(t,sol,par)
                     elif par.solmethod in ['negm']:
-                        post_decision.compute_wq(t,sol,par,compute_q=True)
-                    elif par.solmethod == 'nvfi_cpp':
-                        cpp.compute_wq_nvfi(par,sol)                    
-                    elif par.solmethod == 'negm_cpp':
-                        cpp.compute_wq_negm(par,sol)                    
+                        post_decision.compute_wq(t,sol,par,compute_q=True)                
 
                     toc_w = time.time()
                     par.time_w[t] = toc_w-tic_w
@@ -425,13 +321,7 @@ class DurableConsumptionModelClass(ModelClass):
                     elif par.solmethod == 'nvfi':                
                         nvfi.solve_keep(t,sol,par)
                     elif par.solmethod == 'negm':
-                        negm.solve_keep(t,sol,par)
-                    elif par.solmethod == 'vfi_cpp':
-                        cpp.solve_vfi_keep(par,sol)
-                    elif par.solmethod == 'nvfi_cpp':
-                        cpp.solve_nvfi_keep(par,sol)
-                    elif par.solmethod == 'negm_cpp':
-                        cpp.solve_negm_keep(par,sol)                                        
+                        negm.solve_keep(t,sol,par)                                       
 
                     toc_keep = time.time()
                     par.time_keep[t] = toc_keep-tic_keep
@@ -448,11 +338,7 @@ class DurableConsumptionModelClass(ModelClass):
                     if par.solmethod == 'vfi':
                         vfi.solve_adj(t,sol,par)
                     elif par.solmethod in ['nvfi','negm']:
-                        nvfi.solve_adj(t,sol,par)                  
-                    elif par.solmethod == 'vfi_cpp':
-                        cpp.solve_vfi_adj(par,sol)  
-                    elif par.solmethod in ['nvfi_cpp','negm_cpp']:
-                        cpp.solve_nvfi_adj(par,sol)  
+                        nvfi.solve_adj(t,sol,par)
 
                     toc_adj = time.time()
                     par.time_adj[t] = toc_adj-tic_adj
@@ -469,109 +355,6 @@ class DurableConsumptionModelClass(ModelClass):
                 if par.do_print or par.do_print_period:
                     print(f' t = {t} solved in {toc-tic:.1f} secs')
 
-    def solve_2d(self):
-        """ solve the model """
-
-        par = self.par
-        sol = self.sol
-        cpp = self.cpp
-
-        # backwards induction
-        for t in reversed(range(par.T)):
-            
-            par.t = t
-            tic = time.time()
-            
-            # i. last period
-            if t == par.T-1:
-
-                with jit(self) as model:
-                    last_period.solve_2d(t,model.sol,model.par)
-
-            # ii. all other periods
-            else:
-                
-                # o. compute post-decision functions
-                tic_w = time.time()
-
-                if par.solmethod == 'nvfi_2d_cpp':
-                    cpp.compute_wq_nvfi_2d(par,sol)                    
-                elif par.solmethod == 'negm_2d_cpp':
-                    cpp.compute_wq_negm_2d(par,sol)                    
-
-                toc_w = time.time()
-                par.time_w[t] = toc_w-tic_w
-                if par.do_print:
-                    print(f'  w computed in {toc_w-tic_w:.1f} secs')
-
-                # oo. solve keeper problem
-                tic_keep = time.time()
-                
-                if par.solmethod == 'vfi_2d_cpp':
-                    cpp.solve_vfi_2d_keep(par,sol)
-                elif par.solmethod == 'nvfi_2d_cpp':
-                    cpp.solve_nvfi_2d_keep(par,sol)
-                elif par.solmethod == 'negm_2d_cpp':
-                    cpp.solve_negm_2d_keep(par,sol)
-
-                toc_keep = time.time()
-                par.time_keep[t] = toc_keep-tic_keep
-                if par.do_print:
-                    print(f'  solved keeper problem in {toc_keep-tic_keep:.1f} secs')
-
-                # ooo. solve adjuster problems
-                tic_adj = time.time()
-                
-                if par.solmethod == 'vfi_2d_cpp':
-
-                    tic_adj_full = time.time()
-                    cpp.solve_vfi_2d_adj_full(par,sol) 
-                    par.time_adj_full[t] = time.time()-tic_adj_full
-                    if par.do_print:
-                        print(f'  solved full adjuster problem {par.time_adj_full[t]:.1f} secs')
-                    
-                    tic_adj_d1 = time.time()
-                    cpp.solve_vfi_2d_adj_d1(par,sol) 
-                    par.time_adj_d1[t] = time.time() - tic_adj_d1
-                    if par.do_print:
-                        print(f'  solved adjuster problem with free d1 {par.time_adj_d1[t]:.1f} secs')
-
-                    tic_adj_d2 = time.time()
-                    cpp.solve_vfi_2d_adj_d2(par,sol) 
-                    par.time_adj_d2[t] = time.time() - tic_adj_d2
-                    if par.do_print:
-                        print(f'  solved adjuster problem with free d2 {par.time_adj_d2[t]:.1f} secs')
-
-                elif par.solmethod in ['nvfi_2d_cpp','negm_2d_cpp']:
-
-                    tic_adj_full = time.time()
-                    cpp.solve_nvfi_2d_adj_full(par,sol) 
-                    par.time_adj_full[t] = time.time()-tic_adj_full
-                    if par.do_print:
-                        print(f'  solved full adjuster problem {par.time_adj_full[t]:.1f} secs')
-                    
-                    tic_adj_d1 = time.time()
-                    cpp.solve_nvfi_2d_adj_d1(par,sol)
-                    par.time_adj_d1[t] = time.time() - tic_adj_d1
-                    if par.do_print:
-                        print(f'  solved adjuster problem with free d1 {par.time_adj_d1[t]:.1f} secs')
-
-                    tic_adj_d2 = time.time()
-                    cpp.solve_nvfi_2d_adj_d2(par,sol)
-                    par.time_adj_d2[t] = time.time() - tic_adj_d2
-                    if par.do_print:
-                        print(f'  solved adjuster problem with free d2 {par.time_adj_d2[t]:.1f} secs')
-
-                toc_adj = time.time()
-                par.time_adj[t] = toc_adj-tic_adj
-                if par.do_print:
-                    print(f'  solved adjuster problems in {toc_adj-tic_adj:.1f} secs')
-
-            # iii. print
-            toc = time.time()
-            if par.do_print or par.do_print_period:
-                print(f' t = {t} solved in {toc-tic:.1f} secs')
-
     ############
     # simulate #
     ############
@@ -584,14 +367,7 @@ class DurableConsumptionModelClass(ModelClass):
 
         # a. initial and final
         sim.p0 = np.zeros(par.simN)
-        if par.do_2d:
-            sim.d0 = np.zeros(0) # not used
-            sim.d10 = np.zeros(par.simN)
-            sim.d20 = np.zeros(par.simN)
-        else:
-            sim.d0 = np.zeros(par.simN)
-            sim.d10 = np.zeros(0) # not used
-            sim.d20 = np.zeros(0) # not used 
+        sim.d0 = np.zeros(par.simN)
         sim.a0 = np.zeros(par.simN)
 
         sim.utility = np.zeros(par.simN)
@@ -600,23 +376,9 @@ class DurableConsumptionModelClass(ModelClass):
         sim_shape = (par.T,par.simN)
         sim.p = np.zeros(sim_shape)
         sim.m = np.zeros(sim_shape)
-        if par.do_2d:
-            sim.n = np.zeros((0,0)) # not used
-            sim.n1 = np.zeros(sim_shape)
-            sim.n2 = np.zeros(sim_shape)
-        else:
-            sim.n = np.zeros(sim_shape)
-            sim.n1 = np.zeros((0,0)) # not used
-            sim.n2 = np.zeros((0,0)) # not used 
+        sim.n = np.zeros(sim_shape)
         sim.discrete = np.zeros(sim_shape,dtype=np.int)
-        if par.do_2d:
-            sim.d = np.zeros((0,0)) # not used
-            sim.d1 = np.zeros(sim_shape)
-            sim.d2 = np.zeros(sim_shape)
-        else:
-            sim.d = np.zeros(sim_shape)
-            sim.d1 = np.zeros((0,0)) # not used
-            sim.d2 = np.zeros((0,0)) # not used   
+        sim.d = np.zeros(sim_shape)
         sim.c = np.zeros(sim_shape)
         sim.a = np.zeros(sim_shape)
         
@@ -641,11 +403,7 @@ class DurableConsumptionModelClass(ModelClass):
 
         # a. random shocks
         sim.p0[:] = np.random.lognormal(mean=0,sigma=par.sigma_p0,size=par.simN)
-        if par.do_2d:
-            sim.d10[:] = par.mu_d0/2*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=par.simN)
-            sim.d20[:] = par.mu_d0/2*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=par.simN)
-        else:
-            sim.d0[:] = par.mu_d0*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=par.simN)
+        sim.d0[:] = par.mu_d0*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=par.simN)
         sim.a0[:] = par.mu_a0*np.random.lognormal(mean=0,sigma=par.sigma_a0,size=par.simN)
 
         I = np.random.choice(par.Nshocks,
@@ -774,31 +532,13 @@ class DurableConsumptionModelClass(ModelClass):
         txt += f'     total: {avg_euler_error(self,everybody):.2f} ({percentile_euler_error(self,everybody,5):.2f},{percentile_euler_error(self,everybody,95):.2f})\n'
         txt += f'   keepers: {avg_euler_error(self,keepers):.2f} ({percentile_euler_error(self,keepers,5):.2f},{percentile_euler_error(self,keepers,95):.2f})\n'
         txt += f' adjusters: {avg_euler_error(self,adjusters):.2f} ({percentile_euler_error(self,adjusters,5):.2f},{percentile_euler_error(self,adjusters,95):.2f})\n'
-        
-        if par.do_2d:
-            txt += f'      both: {avg_euler_error(self,adjusters_both):.2f} ({percentile_euler_error(self,adjusters_both,10):.2f},{percentile_euler_error(self,adjusters_both,90):.2f})\n'
-            txt += f'        d1: {avg_euler_error(self,adjusters_d1):.2f} ({percentile_euler_error(self,adjusters_d1,10):.2f},{percentile_euler_error(self,adjusters_d1,90):.2f})\n'
-            txt += f'        d2: {avg_euler_error(self,adjusters_d2):.2f} ({percentile_euler_error(self,adjusters_d2,10):.2f},{percentile_euler_error(self,adjusters_d2,90):.2f})\n'
 
         txt += 'Moments:\n'
-        if par.do_2d:
-            txt += f' adjuster share: {np.mean(sim.discrete > 0):.3f}\n'
-            txt += f'           both: {np.mean(sim.discrete == 1):.3f}\n'
-            txt += f'        only d1: {np.mean(sim.discrete == 2):.3f}\n'
-            txt += f'        only d2: {np.mean(sim.discrete == 3):.3f}\n'
-        else:
-            txt += f' adjuster share: {np.mean(sim.discrete):.3f}\n'
-        
+        txt += f' adjuster share: {np.mean(sim.discrete):.3f}\n'
         txt += f'         mean c: {np.mean(sim.c):.3f}\n'
         txt += f'          var c: {np.var(sim.c):.3f}\n'
 
-        if par.do_2d:
-            txt += f'         mean d1: {np.mean(sim.d1):.3f}\n'
-            txt += f'          var d1: {np.var(sim.d1):.3f}\n'
-            txt += f'         mean d2: {np.mean(sim.d2):.3f}\n'
-            txt += f'          var d2: {np.var(sim.d2):.3f}\n'
-        else:
-            txt += f'         mean d: {np.mean(sim.d):.3f}\n'
-            txt += f'          var d: {np.var(sim.d):.3f}\n'
+        txt += f'         mean d: {np.mean(sim.d):.3f}\n'
+        txt += f'          var d: {np.var(sim.d):.3f}\n'
 
         print(txt)
