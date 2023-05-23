@@ -651,7 +651,7 @@ class DurableConsumptionModelClass(ModelClass):
         I = np.random.choice(par.Nshocks,
             size=(par.T,par.simN), 
             p=par.psi_w*par.xi_w)
-        sim.psi[:,:] = par.psi[I] 
+        sim.psi[:,:] = par.psi[I]
         sim.xi[:,:] = par.xi[I]
 
         # b. call
