@@ -5,7 +5,7 @@ Solves the Deaton-Carroll buffer-stock consumption model with either:
 
 A. vfi: standard value function iteration
 B. nvfi: nested value function iteration
-C. egm: endogenous grid point method (also in C++)
+C. egm: endogenous grid point method
 
 """
 
@@ -55,11 +55,7 @@ class BufferStockModelClass(ModelClass):
         self.savefolder = 'saved'
         
         # d. list not-floats for safe type inference
-        self.not_floats = ['T','Npsi','Nxi','Nm','Np','Na','do_print','do_simple_w','simT','simN','sim_seed','cppthreads','Nshocks']
-
-        # e. cpp
-        self.cpp_filename = 'cppfuncs/egm.cpp'
-        self.cpp_options = {'compiler':'vs'}
+        self.not_floats = ['T','Npsi','Nxi','Nm','Np','Na','do_print','do_simple_w','simT','simN','sim_seed','Nshocks']
         
     def setup(self):
         """ set baseline parameters """   
@@ -94,7 +90,6 @@ class BufferStockModelClass(ModelClass):
         par.tol = 1e-8
         par.do_print = True
         par.do_simple_w = False
-        par.cppthreads = 1
 
         # g. simulation
         par.simT = par.T
@@ -202,24 +197,6 @@ class BufferStockModelClass(ModelClass):
                     if t < par.T-1:
                         msg += f' (w: {elapsed(t0_w,t1_w)})'                
                     print(msg)
-
-    def solve_cpp(self):
-        """ solve the model using egm written in C++ """
-
-        par = self.par
-        sol = self.sol
-
-        # a. solve by EGM
-        t0 = time.time()
-       
-        if par.solmethod in ['egm']:
-            self.cpp.solve(par,sol)
-        else:
-            raise ValueError(f'unknown cpp solution method, {par.solmethod}')            
-        
-        t1 = time.time()
-
-        return t0,t1
 
     ############
     # simulate #

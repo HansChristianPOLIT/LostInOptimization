@@ -17,7 +17,7 @@ def n_plus_func(d,par):
 @njit(fastmath=True)
 def m_plus_func(a,p_plus,xi_plus,par):
     y_plus = p_plus*xi_plus
-    m_plus = par.R*a+ y_plus
+    m_plus = par.R*a+ (1-par.tax_rate)*y_plus
     return m_plus
 
 @njit(fastmath=True)

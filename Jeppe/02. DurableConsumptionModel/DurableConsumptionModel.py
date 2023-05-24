@@ -3,11 +3,9 @@
 
 Solves a consumption-saving model with a durable consumption good and non-convex adjustment costs with either:
 
-A. vfi: value function iteration (only i C++)
-B. nvfi: nested value function iteration (both in Python and C++)
-C. negm: nested endogenous grid point method (both in Python and C++)
-
-The do_2d switch turns on the extended version with two durable stocks.
+A. vfi: value function iteration
+B. nvfi: nested value function iteration
+C. negm: nested endogenous grid point method
 
 """
 
@@ -63,6 +61,9 @@ class DurableConsumptionModelClass(ModelClass):
 
         # horizon
         par.T = 5
+
+        # tax 
+        par.tax_rate = 0.6 # tax rate
         
         # preferences
         par.beta = 0.965
