@@ -50,7 +50,7 @@ def compute_wq(t,sol,par,compute_q=False):
                 xi_plus_w = par.xi_w[ishock]
 
                 # ii. next-period income and durables
-                p_plus = trans.p_plus_func(p,psi_plus,par)
+                p_plus = trans.p_plus_func(p,psi_plus,par,t)
                 n_plus = trans.n_plus_func(n,par)
 
                 # iii. prepare interpolators
@@ -63,7 +63,7 @@ def compute_wq(t,sol,par,compute_q=False):
                 # v. next-period cash-on-hand and total resources
                 for i_a in range(par.Na):
         
-                    m_plus[i_a] = trans.m_plus_func(par.grid_a[i_a],p_plus,xi_plus,par)
+                    m_plus[i_a] = trans.m_plus_func(par.grid_a[i_a],p_plus,xi_plus,par,t)
                     x_plus[i_a] = trans.x_plus_func(m_plus[i_a],n_plus,par)
                 
                 # vi. interpolate
