@@ -63,7 +63,7 @@ class DurableConsumptionModelClass(ModelClass):
         par.T = 5
 
         # tax 
-        par.tax_rate = 0.6 # tax rate
+        par.tax_rate = 0.4 # tax rate
         
         # preferences
         par.beta = 0.965
