@@ -51,7 +51,7 @@ class DurableConsumptionModelClass(ModelClass):
         # d. list not-floats for safe type inference
         self.not_floats = ['solmethod','T','t','simN','sim_seed',
                            'Npsi','Nxi','Nm','Np','Nn','Nx','Na','Nshocks',
-                           'do_print','do_print_period','do_marg_u','do_simple_wq']
+                           'do_print','do_print_period','do_marg_u']
 
 
     def setup(self):
@@ -74,12 +74,8 @@ class DurableConsumptionModelClass(ModelClass):
         # returns and income
         par.R = 1.03
         par.tau = 0.10
-        par.tau1 = 0.08
-        par.tau2 = 0.12
         par.delta = 0.15
-        par.delta1 = 0.10
-        par.delta2 = 0.20
-        par.gamma = 0.50 # note: the last_period.solve_2d function must be updated if this value is changed
+
         par.sigma_psi = 0.1
         par.Npsi = 5
         par.sigma_xi = 0.1
@@ -116,7 +112,7 @@ class DurableConsumptionModelClass(ModelClass):
         par.tol = 1e-8
         par.do_print = False
         par.do_print_period = False
-        par.do_simple_wq = False # not using optimized interpolation in C++
+        #par.do_simple_wq = False # not using optimized interpolation in C++
         par.do_marg_u = False # calculate marginal utility for use in egm
         
     def allocate(self):
@@ -266,8 +262,6 @@ class DurableConsumptionModelClass(ModelClass):
             do_assert (bool,optional): make assertions on the solution
         
         """
-
-        cpp = self.cpp
 
         tic = time.time()
             
@@ -512,9 +506,6 @@ class DurableConsumptionModelClass(ModelClass):
         # population
         keepers = sim.discrete[:-1,:].ravel() == 0
         adjusters = sim.discrete[:-1,:].ravel() > 0
-        adjusters_both = sim.discrete[:-1,:].ravel() == 1
-        adjusters_d1 = sim.discrete[:-1,:].ravel() == 2
-        adjusters_d2 = sim.discrete[:-1,:].ravel() == 3
         everybody = keepers | adjusters
 
         # print

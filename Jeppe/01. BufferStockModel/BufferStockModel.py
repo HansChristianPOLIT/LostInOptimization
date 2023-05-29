@@ -55,7 +55,7 @@ class BufferStockModelClass(ModelClass):
         self.savefolder = 'saved'
         
         # d. list not-floats for safe type inference
-        self.not_floats = ['T','Npsi','Nxi','Nm','Np','Na','do_print','do_simple_w','simT','simN','sim_seed','Nshocks']
+        self.not_floats = ['T','Npsi','Nxi','Nm','Np','Na','do_print','simT','simN','sim_seed','Nshocks']
         
     def setup(self):
         """ set baseline parameters """   
@@ -89,7 +89,6 @@ class BufferStockModelClass(ModelClass):
         # f. misc
         par.tol = 1e-8
         par.do_print = True
-        par.do_simple_w = False
 
         # g. simulation
         par.simT = par.T
@@ -174,10 +173,7 @@ class BufferStockModelClass(ModelClass):
 
                     if compute_w or compute_q:
 
-                        if par.do_simple_w:
-                            post_decision.compute_wq_simple(t,sol,par,compute_w=compute_w,compute_q=compute_q)
-                        else:
-                            post_decision.compute_wq(t,sol,par,compute_w=compute_w,compute_q=compute_q)
+                        post_decision.compute_wq(t,sol,par,compute_w=compute_w,compute_q=compute_q)
 
                     t1_w = time.time()
 
