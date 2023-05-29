@@ -28,7 +28,7 @@ def obj_bellman(c,p,m,v_plus,par):
         # ii. next-period states
         p_plus = p*psi
         y_plus = p_plus*xi
-        m_plus = par.R*a + y_plus
+        m_plus = par.R*a + (1-par.tax_rate)*y_plus
         
         # iii. weight
         weight = psi_w*xi_w

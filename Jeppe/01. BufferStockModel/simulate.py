@@ -23,7 +23,7 @@ def lifecycle(sim,sol,par):
                 m[t,i] = 1
             else:
                 p[t,i] = sim.psi[t,i]*p[t-1,i]
-                m[t,i] = par.R*a[t-1,i] + sim.xi[t,i]*p[t,i]
+                m[t,i] = par.R*a[t-1,i] + (1-par.tax_rate)*sim.xi[t,i]*p[t,i]
 
             # b. choices
             c[t,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t],p[t,i],m[t,i])

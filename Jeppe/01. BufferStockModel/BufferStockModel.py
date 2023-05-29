@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""BufferStockModel
+"""BufferStockModel RIGTIGE
 
 Solves the Deaton-Carroll buffer-stock consumption model with either:
 
@@ -70,7 +70,17 @@ class BufferStockModelClass(ModelClass):
         
         # c. preferences
         par.beta = 0.96
-        par.rho = 2.0 # if par.rho = 2 the type is incorrectly inferred as int (error rasied)
+        par.Delta_dispersion = 0.01
+        par.beta_min = par.beta - par.Delta_dispersion
+        par.beta_max = par.beta + par.Delta_dispersion
+        par.betas = np.linspace(par.beta_min, par.beta_max, num=3) # possible beta values
+
+        # uniform probabilities for each beta
+        par.beta_w = np.ones_like(par.betas) / len(par.betas)
+
+
+        # tax
+        par.tax_rate = 0.4 # tax rate (extention)
 
         # d. returns and income
         par.R = 1.03

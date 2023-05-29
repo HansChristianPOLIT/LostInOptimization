@@ -53,7 +53,7 @@ def compute_wq(t,sol,par,compute_w=False,compute_q=False):
 
             # v. next-period cash-on-hand and interpolate
             for ia in range(par.Na):
-                m_plus[ia] = par.R*par.grid_a[ia] + y_plus
+                m_plus[ia] = par.R*par.grid_a[ia] + (1-par.tax_rate)*y_plus
             
             # v_plus
             if compute_w:
