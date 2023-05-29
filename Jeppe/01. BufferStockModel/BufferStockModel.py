@@ -78,9 +78,11 @@ class BufferStockModelClass(ModelClass):
         # uniform probabilities for each beta
         par.beta_w = np.ones_like(par.betas) / len(par.betas)
 
+        # rho
+        par.rho = 2.0
 
         # tax
-        par.tax_rate = 0.4 # tax rate (extention)
+        par.tax_rate = 0.0 # tax rate (extention)
 
         # d. returns and income
         par.R = 1.03
