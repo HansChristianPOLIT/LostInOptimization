@@ -42,8 +42,19 @@ def compute_wq(t,sol,par,compute_w=False,compute_q=False):
             xi_w = par.xi_w[ishock]
 
             # ii. next-period income
-            p_plus = p*psi
-            y_plus = p_plus*xi
+            if t<=par.Tr:
+                p_plus = p*psi*par.L[t]             # shocks to permanent income before retirement
+                #p_plus = np.fmax(p_plus,par.p_min)  # lower bound
+                #p_plus = np.fmin(p_plus,par.p_max)  # upper bound
+            else: 
+                p_plus = p*par.L[t]                 # no shocks to permanent income after retirement
+                #p_plus = np.fmax(p_plus,par.p_min)  # lower bound
+                #p_plus = np.fmin(p_plus,par.p_max)  # upper bound
+            
+            if t<=par.Tr:
+                y_plus = p_plus*xi #xi_plus ? 
+            else:
+                y_plus = p_plus
             
             # iii. prepare interpolation in p direction
             prep = linear_interp.interp_2d_prep(par.grid_p,p_plus,par.Na)

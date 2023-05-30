@@ -54,7 +54,8 @@ def lifecycle(model):
 
     simvarlist = [('m','$m_t$'),
                   ('c','$c_t$'),
-                  ('a','$a_t$')]
+                  ('a','$a_t$'),
+                  ('p','$p_t$')]
 
     age = np.arange(par.T)
     ax = fig.add_subplot(1,1,1)

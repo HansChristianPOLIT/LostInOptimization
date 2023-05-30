@@ -16,7 +16,7 @@ def solve(t,sol,par):
         for im in range(par.Nm):
             
             # a. states
-            _p = par.grid_p[ip]
+            _p = par.grid_p[ip] # ændres til "p"?
             m = par.grid_m[im]
 
             # b. optimal choice (consume everything)

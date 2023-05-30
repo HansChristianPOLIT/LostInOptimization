@@ -21,9 +21,12 @@ def lifecycle(sim,sol,par):
             if t == 0:
                 p[t,i] = 1
                 m[t,i] = 1
-            else:
-                p[t,i] = sim.psi[t,i]*p[t-1,i]
+            elif t<=par.Tr:
+                p[t,i] = sim.psi[t,i]*p[t-1,i]*par.L[t-1] # t-1 eller t for L? 
                 m[t,i] = par.R*a[t-1,i] + (1-par.tax_rate)*sim.xi[t,i]*p[t,i]
+            else:
+                p[t,i] = p[t-1,i]*par.L[t-1]
+                m[t,i] = par.R*a[t-1,i] + (1-par.tax_rate)*p[t,i] 
 
             # b. choices
             c[t,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t],p[t,i],m[t,i])

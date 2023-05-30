@@ -75,6 +75,14 @@ class BufferStockModelClass(ModelClass):
         par.beta_max = par.beta + par.Delta_dispersion
         par.betas = np.linspace(par.beta_min, par.beta_max, num=3) # possible beta values
 
+        # horizon and life cycle
+        par.Tmin = 20 # age when entering the model
+        par.T = 80 - par.Tmin # age of death
+        par.Tr = 60 - par.Tmin # retirement age
+        par.L = np.ones(par.T-1) # retirement profile
+        par.L[par.Tr-1] = 0.67 #0.67 # drop in permanent income at retirement age
+
+
         # uniform probabilities for each beta
         par.beta_w = np.ones_like(par.betas) / len(par.betas)
 
