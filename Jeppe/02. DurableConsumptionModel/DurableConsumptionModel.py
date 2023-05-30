@@ -64,7 +64,7 @@ class DurableConsumptionModelClass(ModelClass):
         par.T = 80 - par.Tmin # age of death
         par.Tr = 60 - par.Tmin # retirement age
         par.L = np.ones(par.T-1) # retirement profile
-        par.L[par.Tr-1:] = 0.67 # drop in permanent income at retirement age
+        par.L[par.Tr-1] = 0.67 # drop in permanent income at retirement age
 
         # tax 
         par.tax_rate = 0.4 # tax rate
