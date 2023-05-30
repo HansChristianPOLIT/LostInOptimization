@@ -50,21 +50,46 @@ def lifecycle(model):
     sim = model.sim
 
     # b. figure
-    fig = plt.figure()
+    fig = plt.figure(figsize=(12,12))
 
-    simvarlist = [('m','$m_t$'),
-                  ('c','$c_t$'),
-                  ('a','$a_t$'),
-                  ('p','$p_t$')]
+    simvarlist = [('p','(A): Permanent income, $p_t$'),
+                  #('n','$n_t$'),
+                  ('m','(B): Cash-on-hand, $m_t$'),
+                  ('c','(C): Consumption, $c_t$'),
+                  ('a','(D): Savings, $a_t$')]
 
     age = np.arange(par.T)
-    ax = fig.add_subplot(1,1,1)
-    
-    for simvar,simvarlatex in simvarlist:
+    for i,(simvar,simvarlatex) in enumerate(simvarlist):
 
-        simdata = getattr(sim,simvar)
-        ax.plot(age,np.mean(simdata,axis=1),lw=2,label=simvarlatex)
-    
-    ax.legend(frameon=True)
-    ax.grid(True)
-    ax.set_xlabel('age')
+        ax = fig.add_subplot(3,2,i+1)
+
+        simdata = getattr(sim,simvar)[:par.T,:]
+
+        ax.plot(age,np.percentile(simdata,90,axis=1),
+            ls='--',lw=1,color='purple', label='90% quantile')
+        ax.plot(age,np.percentile(simdata,75,axis=1),
+            ls='--',lw=1,color='black', label='75% quantile')
+        ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
+        ax.plot(age,np.percentile(simdata,50,axis=1),
+            ls='--',lw=1,color='orange', label='50% quantile')
+        ax.plot(age,np.percentile(simdata,25,axis=1),
+            ls='--',lw=1,color='red', label='25% quantile')
+        ax.plot(age,np.percentile(simdata,10,axis=1),
+            ls='--',lw=1,color='green', label='10% quantile')
+
+        ax.set_title(simvarlatex)
+        if par.T > 10:
+            ax.xaxis.set_ticks(age[::5])
+        else:
+            ax.xaxis.set_ticks(age)
+
+        ax.grid(True)
+        if simvar in ['c','a']:
+            ax.set_xlabel('age')
+
+        if simvar in ['p']:
+            legend = ax.legend(frameon=True,prop={'size': 8})
+            frame = legend.get_frame()
+            frame.set_edgecolor('black')
+
+    plt.show()
