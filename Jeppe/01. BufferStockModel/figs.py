@@ -53,7 +53,6 @@ def lifecycle(model):
     fig = plt.figure(figsize=(12,12))
 
     simvarlist = [('p','(A): Permanent income, $p_t$'),
-                  #('n','$n_t$'),
                   ('m','(B): Cash-on-hand, $m_t$'),
                   ('c','(C): Consumption, $c_t$'),
                   ('a','(D): Savings, $a_t$')]
@@ -63,7 +62,7 @@ def lifecycle(model):
 
         ax = fig.add_subplot(3,2,i+1)
 
-        simdata = getattr(sim,simvar)[:par.T,:]
+        simdata = getattr(sim,simvar+'_rand')[:par.T,:]
 
         ax.plot(age,np.percentile(simdata,90,axis=1),
             ls='--',lw=1,color='purple', label='90% quantile')

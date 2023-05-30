@@ -8,11 +8,11 @@ from consav import linear_interp # for linear interpolation
 import utility
 
 @njit(parallel=True)
-def solve_bellman(t,sol,par):
+def solve_bellman(t,b,sol,par):
     """solve the bellman equation using the endogenous grid method"""
 
     # unpack (helps numba optimize)
-    c = sol.c[t]
+    c = sol.c[t,b]
 
     for ip in prange(par.Np): # in parallel
         
@@ -22,12 +22,8 @@ def solve_bellman(t,sol,par):
 
         # b. invert Euler equation
         for ia in range(par.Na):
-            c_temp[ia+1] = utility.inv_marg_func(sol.q[ip,ia],par)
+            c_temp[ia+1] = utility.inv_marg_func(sol.q[b,ip,ia],par)
             m_temp[ia+1] = par.grid_a[ia] + c_temp[ia+1]
         
         # b. re-interpolate consumption to common grid
-        if par.do_simple_w: # use an explicit loop
-            for im in range(par.Nm):
-                c[ip,im] = linear_interp.interp_1d(m_temp,c_temp,par.grid_m[im])
-        else: # use a vectorized call (assumming par.grid_m is monotone)
-            linear_interp.interp_1d_vec_mon_noprep(m_temp,c_temp,par.grid_m,c[ip,:])
+        linear_interp.interp_1d_vec_mon_noprep(m_temp,c_temp,par.grid_m,c[ip,:])

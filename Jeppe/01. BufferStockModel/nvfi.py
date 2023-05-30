@@ -26,12 +26,12 @@ def obj_bellman(c,m,interp_w,par):
 
 # b. solve bellman equation        
 @njit(parallel=True)
-def solve_bellman(t,sol,par):
+def solve_bellman(t,b,sol,par):
     """solve bellman equation using nvfi"""
 
     # unpack (this helps numba optimize)
-    v = sol.v[t]
-    c = sol.c[t]
+    v = sol.v[t,b]
+    c = sol.c[t,b]
 
     # loop over outer states
     for ip in prange(par.Np): # in parallel
@@ -45,11 +45,11 @@ def solve_bellman(t,sol,par):
             # b. optimal choice
             c_low = np.fmin(m/2,1e-8)
             c_high = m
-            c[ip,im] = golden_section_search.optimizer(obj_bellman,c_low,c_high,args=(m,sol.w[ip],par),tol=par.tol)
+            c[ip,im] = golden_section_search.optimizer(obj_bellman,c_low,c_high,args=(m,sol.w[b,ip], par),tol=par.tol)
 
             # note: the above finds the minimum of obj_bellman in range [c_low,c_high] with a tolerance of par.tol
             # and arguments (except for c) as specified 
 
             # c. optimal value
-            v[ip,im] = -obj_bellman(c[ip,im],m,sol.w[ip],par)
+            v[ip,im] = -obj_bellman(c[ip,im],m,sol.w[b,ip],par)
 

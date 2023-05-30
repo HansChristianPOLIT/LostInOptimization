@@ -8,17 +8,15 @@ from consav import linear_interp # for linear interpolation
 import utility
 
 @njit(parallel=True)
-def compute_wq(t,sol,par,compute_w=False,compute_q=False):
+def compute_wq(t,b,sol,par,beta,compute_w=False,compute_q=False):
     """ compute the post-decision functions w and/or q """
 
-    # this is a variant of Algorithm 5 in Druedahl (2019): A Guide to Solve Non-Convex Consumption-Saving Problems 
-
     # unpack (helps numba optimize)
-    w = sol.w
-    q = sol.q
+    w = sol.w[b]
+    q = sol.q[b]
 
     # loop over outermost post-decision state
-    for ip in range(par.Np): # in parallel
+    for ip in prange(par.Np): # in parallel
 
         # a. permanent income
         p = par.grid_p[ip]
@@ -52,7 +50,7 @@ def compute_wq(t,sol,par,compute_w=False,compute_q=False):
                 #p_plus = np.fmin(p_plus,par.p_max)  # upper bound
             
             if t<=par.Tr:
-                y_plus = p_plus*xi #xi_plus ? 
+                y_plus = p_plus*xi
             else:
                 y_plus = p_plus
             
@@ -64,20 +62,20 @@ def compute_wq(t,sol,par,compute_w=False,compute_q=False):
 
             # v. next-period cash-on-hand and interpolate
             for ia in range(par.Na):
-                m_plus[ia] = par.R*par.grid_a[ia] + (1-par.tax_rate)*y_plus
+                m_plus[ia] = par.R*par.grid_a[ia] + (1-par.tax_rate_vec[t])*y_plus
             
             # v_plus
             if compute_w:
-                linear_interp.interp_2d_only_last_vec_mon(prep,par.grid_p,par.grid_m,sol.v[t+1],p_plus,m_plus,v_plus)
+                linear_interp.interp_2d_only_last_vec_mon(prep,par.grid_p,par.grid_m,sol.v[t+1,b],p_plus,m_plus,v_plus)
                 
             # c_plus
             if compute_q:
-                linear_interp.interp_2d_only_last_vec_mon(prep,par.grid_p,par.grid_m,sol.c[t+1],p_plus,m_plus,c_plus)
+                linear_interp.interp_2d_only_last_vec_mon(prep,par.grid_p,par.grid_m,sol.c[t+1,b],p_plus,m_plus,c_plus)
 
             # vi. accumulate all
             if compute_w:
                 for ia in range(par.Na):
-                    w[ip,ia] += weight*par.beta*v_plus[ia]            
+                    w[ip,ia] += weight*beta*v_plus[ia]            
             if compute_q:
                 for ia in range(par.Na):
-                    q[ip,ia] += weight*par.R*par.beta*utility.marg_func(c_plus[ia],par)
+                    q[ip,ia] += weight*par.R*beta*utility.marg_func(c_plus[ia],par)

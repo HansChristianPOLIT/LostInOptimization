@@ -29,16 +29,16 @@ def obj_keep(c,n,m,inv_w,grid_a,d_ubar,alpha,rho):
 
 
 @njit(parallel=True)
-def solve_keep(t,sol,par):
+def solve_keep(t,b,sol,par):
     """solve bellman equation for keepers using nvfi"""
 
     # unpack output
-    inv_v = sol.inv_v_keep[t]
-    inv_marg_u = sol.inv_marg_u_keep[t]
-    c = sol.c_keep[t]
+    inv_v = sol.inv_v_keep[t,b]
+    inv_marg_u = sol.inv_marg_u_keep[t,b]
+    c = sol.c_keep[t,b]
 
     # unpack input
-    inv_w = sol.inv_w[t]
+    inv_w = sol.inv_w[t,b]
     grid_a = par.grid_a
     d_ubar = par.d_ubar
     alpha = par.alpha
@@ -92,18 +92,18 @@ def obj_adj(d,x,inv_v_keep,grid_n,grid_m):
     return -linear_interp.interp_2d(grid_n,grid_m,inv_v_keep,n,m)  # we are minimizing
 
 @njit(parallel=True)
-def solve_adj(t,sol,par):
+def solve_adj(t,b,sol,par):
     """solve bellman equation for adjusters using nvfi"""
 
     # unpack output
-    inv_v = sol.inv_v_adj[t]
-    inv_marg_u = sol.inv_marg_u_adj[t]
-    d = sol.d_adj[t]
-    c = sol.c_adj[t]
+    inv_v = sol.inv_v_adj[t,b]
+    inv_marg_u = sol.inv_marg_u_adj[t,b]
+    d = sol.d_adj[t,b]
+    c = sol.c_adj[t,b]
 
     # unpack input
-    inv_v_keep = sol.inv_v_keep[t]
-    c_keep = sol.c_keep[t]
+    inv_v_keep = sol.inv_v_keep[t,b]
+    c_keep = sol.c_keep[t,b]
     grid_n = par.grid_n
     grid_m = par.grid_m
     d_ubar = par.d_ubar

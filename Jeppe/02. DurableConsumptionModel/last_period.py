@@ -18,17 +18,17 @@ def obj_last_period(d,x,par):
     return -utility.func(c,d,par)
 
 @njit(parallel=True)
-def solve(t,sol,par):
+def solve(t,b,sol,par):
     """ solve the problem in the last period """
 
     # unpack
-    inv_v_keep = sol.inv_v_keep[t]
-    inv_marg_u_keep = sol.inv_marg_u_keep[t]
-    c_keep = sol.c_keep[t]
-    inv_v_adj = sol.inv_v_adj[t]
-    inv_marg_u_adj = sol.inv_marg_u_adj[t]
-    d_adj = sol.d_adj[t]
-    c_adj = sol.c_adj[t]
+    inv_v_keep = sol.inv_v_keep[t,b]
+    inv_marg_u_keep = sol.inv_marg_u_keep[t,b]
+    c_keep = sol.c_keep[t,b]
+    inv_v_adj = sol.inv_v_adj[t,b]
+    inv_marg_u_adj = sol.inv_marg_u_adj[t,b]
+    d_adj = sol.d_adj[t,b]
+    c_adj = sol.c_adj[t,b]
 
     # a. keep
     for i_p in prange(par.Np):

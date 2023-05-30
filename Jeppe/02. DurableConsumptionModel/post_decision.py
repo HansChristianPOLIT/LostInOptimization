@@ -9,12 +9,12 @@ import utility
 import trans
 
 @njit(parallel=True)
-def compute_wq(t,sol,par,compute_q=False):
+def compute_wq(t,b,sol,par,beta,compute_q=False):
     """ compute the post-decision functions w and/or q """
 
     # unpack
-    inv_w = sol.inv_w[t]
-    q = sol.q[t]
+    inv_w = sol.inv_w[t,b]
+    q = sol.q[t,b]
 
     # loop over outermost post-decision state
     for i_p in prange(par.Np):
@@ -67,11 +67,11 @@ def compute_wq(t,sol,par,compute_q=False):
                     x_plus[i_a] = trans.x_plus_func(m_plus[i_a],n_plus,par)
                 
                 # vi. interpolate
-                linear_interp.interp_3d_only_last_vec_mon(prep_keep,par.grid_p,par.grid_n,par.grid_m,sol.inv_v_keep[t+1],p_plus,n_plus,m_plus,inv_v_keep_plus)
-                linear_interp.interp_2d_only_last_vec_mon(prep_adj,par.grid_p,par.grid_x,sol.inv_v_adj[t+1],p_plus,x_plus,inv_v_adj_plus)
+                linear_interp.interp_3d_only_last_vec_mon(prep_keep,par.grid_p,par.grid_n,par.grid_m,sol.inv_v_keep[t+1,b],p_plus,n_plus,m_plus,inv_v_keep_plus)
+                linear_interp.interp_2d_only_last_vec_mon(prep_adj,par.grid_p,par.grid_x,sol.inv_v_adj[t+1,b],p_plus,x_plus,inv_v_adj_plus)
                 if compute_q:
-                    linear_interp.interp_3d_only_last_vec_mon_rep(prep_keep,par.grid_p,par.grid_n,par.grid_m,sol.inv_marg_u_keep[t+1],p_plus,n_plus,m_plus,inv_marg_u_keep_plus)
-                    linear_interp.interp_2d_only_last_vec_mon_rep(prep_adj,par.grid_p,par.grid_x,sol.inv_marg_u_adj[t+1],p_plus,x_plus,inv_marg_u_adj_plus)
+                    linear_interp.interp_3d_only_last_vec_mon_rep(prep_keep,par.grid_p,par.grid_n,par.grid_m,sol.inv_marg_u_keep[t+1,b],p_plus,n_plus,m_plus,inv_marg_u_keep_plus)
+                    linear_interp.interp_2d_only_last_vec_mon_rep(prep_adj,par.grid_p,par.grid_x,sol.inv_marg_u_adj[t+1,b],p_plus,x_plus,inv_marg_u_adj_plus)
                      
                 # vii. max and accumulate
                 if compute_q:
@@ -86,13 +86,13 @@ def compute_wq(t,sol,par,compute_q=False):
                             v_plus = -1/inv_v_adj_plus[i_a]
                             marg_u_plus = 1/inv_marg_u_adj_plus[i_a]
 
-                        w[i_a] += weight*par.beta*v_plus
-                        q[i_p,i_n,i_a] += weight*par.beta*par.R*marg_u_plus
+                        w[i_a] += weight*beta*v_plus
+                        q[i_p,i_n,i_a] += weight*beta*par.R*marg_u_plus
 
                 else:
 
                     for i_a in range(par.Na):
-                        w[i_a] += weight*par.beta*(-1.0/np.fmax(inv_v_keep_plus[i_a],inv_v_adj_plus[i_a]))
+                        w[i_a] += weight*beta*(-1.0/np.fmax(inv_v_keep_plus[i_a],inv_v_adj_plus[i_a]))
         
             # d. transform post decision value function
             for i_a in range(par.Na):

@@ -13,7 +13,7 @@ import utility
 import trans
 
 @njit
-def value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par):
+def value_of_choice(t,b,c,d,p,x,inv_v_keep,inv_v_adj,par,beta):
     
     # a. end-of-period-assets
     a = x-c-d
@@ -39,11 +39,11 @@ def value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par):
 
         # iv. update
         inv_v_plus_keep_now = linear_interp.interp_3d(par.grid_p,par.grid_n,par.grid_m,
-                                                      inv_v_keep[t+1], p_plus, n_plus,
+                                                      inv_v_keep[t+1,b], p_plus, n_plus,
                                                       m_plus)
 
         inv_v_plus_adj_now = linear_interp.interp_2d(par.grid_p, par.grid_x, 
-                                                     inv_v_adj[t+1], p_plus, x_plus)
+                                                     inv_v_adj[t+1,b], p_plus, x_plus)
         
         v_plus_now = - np.inf  # huge negative value
         
@@ -52,7 +52,7 @@ def value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par):
         elif inv_v_plus_adj_now > 0:
             v_plus_now = -1/inv_v_plus_adj_now
             
-        w += weight*par.beta*v_plus_now
+        w += weight*beta*v_plus_now
         
     # v. total value
     v = utility.func(c,d,par) + w
@@ -64,7 +64,7 @@ def value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par):
 ########
     
 @njit
-def obj_keep(c,t,n,p,m,inv_v_keep,inv_v_adj,par): # max wrt. c
+def obj_keep(c,t,b,n,p,m,inv_v_keep,inv_v_adj,par,beta): # max wrt. c
     """ evaluate bellman equation keepers """
     
     # unpack (helps numba optimize)
@@ -76,16 +76,16 @@ def obj_keep(c,t,n,p,m,inv_v_keep,inv_v_adj,par): # max wrt. c
         penalty = 10_000*(1e-12-c)
         c = 1e-12
 
-    return -value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par) + penalty # minimization
+    return -value_of_choice(t,b,c,d,p,x,inv_v_keep,inv_v_adj,par,beta) + penalty # minimization
 
 # b. solve keep
 @njit(parallel=True)
-def solve_keep(t,sol,par):
+def solve_keep(t,b,sol,par,beta):
     """solve bellman equation for keepers using vfi"""
 
     # unpack (helps numba optimize)
-    inv_v = sol.inv_v_keep[t]
-    c = sol.c_keep[t]
+    inv_v = sol.inv_v_keep[t,b]
+    c = sol.c_keep[t,b]
     
     # keep: loop over outer states
     for i_p in prange(par.Np): # loop in parallel        
@@ -108,11 +108,11 @@ def solve_keep(t,sol,par):
                 c_low = np.fmin(m/2,1e-8)
                 c_high = m
                 c_opt = golden_section_search.optimizer(obj_keep,c_low,c_high,
-                    args=(t,n,p,m,sol.inv_v_keep,sol.inv_v_adj,par),tol=par.tol)
+                    args=(t,b,n,p,m,sol.inv_v_keep,sol.inv_v_adj,par,beta),tol=par.tol)
                 c[i_p,i_n,i_m] = c_opt
 
                 # c. optimal value
-                v = -obj_keep(c[i_p,i_n,i_m],t,n,p,m,sol.inv_v_keep,sol.inv_v_adj,par)
+                v = -obj_keep(c[i_p,i_n,i_m],t,b,n,p,m,sol.inv_v_keep,sol.inv_v_adj,par,beta)
                 inv_v[i_p,i_n,i_m] = -1/v
                 
 #######
@@ -120,7 +120,7 @@ def solve_keep(t,sol,par):
 #######
 
 @njit
-def obj_adj(choices,t,p,x,inv_v_keep,inv_v_adj,par):
+def obj_adj(choices,t,b,p,x,inv_v_keep,inv_v_adj,par,beta):
     """ evaluate bellman equation adjusters """
     
     # load consumption and durable consumption guesses from optimizer
@@ -136,16 +136,16 @@ def obj_adj(choices,t,p,x,inv_v_keep,inv_v_adj,par):
         c /= (c+d)/x
         d /= (c+d)/x
 
-    return value_of_choice(t,c,d,p,x,inv_v_keep,inv_v_adj,par) - penalty # maximization
+    return value_of_choice(t,b,c,d,p,x,inv_v_keep,inv_v_adj,par,beta) - penalty # maximization
 
 # c. solve adjuster problem (2D optimization)
 @njit(parallel=True)
-def solve_adj(t,sol,par):
+def solve_adj(t,b,sol,par,beta):
 
     # unpack (helps numba optimize)
-    inv_v = sol.inv_v_adj[t]
-    d = sol.d_adj[t]
-    c = sol.c_adj[t]
+    inv_v = sol.inv_v_adj[t,b]
+    d = sol.d_adj[t,b]
+    c = sol.c_adj[t,b]
 
     # adj: loop over outer states
     # loop over p state
@@ -172,7 +172,7 @@ def solve_adj(t,sol,par):
                 # b. optimal choice
                 results = qe.optimize.nelder_mead(obj_adj,choices, 
                     bounds = np.array([[1e-8,x],[1e-8,x]]), 
-                    args=(t,p,x,sol.inv_v_keep,sol.inv_v_adj,par),
+                    args=(t,b,p,x,sol.inv_v_keep,sol.inv_v_adj,par,beta),
                     tol_x=par.tol, 
                     max_iter=1000)
 

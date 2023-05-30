@@ -4,19 +4,19 @@ from numba import njit, prange
 import utility
 
 @njit(parallel=True)
-def solve(t,sol,par):
+def solve(t,b,sol,par):
     """ solve the problem in the last period """
 
     # unpack (helps numba optimize)
-    v = sol.v[t]
-    c = sol.c[t]
+    v = sol.v[t,b]
+    c = sol.c[t,b]
 
     # loop over states
     for ip in prange(par.Np): # in parallel
         for im in range(par.Nm):
             
             # a. states
-            _p = par.grid_p[ip] # ændres til "p"?
+            _p = par.grid_p[ip]
             m = par.grid_m[im]
 
             # b. optimal choice (consume everything)

@@ -25,7 +25,7 @@ def m_plus_func(a,p_plus,xi_plus,par,t):
         y_plus = p_plus*xi_plus
     else:
         y_plus = p_plus
-    m_plus = par.R*a+ (1-par.tax_rate)*y_plus
+    m_plus = par.R*a+ (1-par.tax_rate_vec[t])*y_plus
     return m_plus
 
 @njit(fastmath=True)

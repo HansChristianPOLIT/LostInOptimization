@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""BufferStockModel RIGTIGE
+"""BufferStockModel
 
 Solves the Deaton-Carroll buffer-stock consumption model with either:
 
@@ -65,33 +65,24 @@ class BufferStockModelClass(ModelClass):
         # a. solution method
         par.solmethod = 'nvfi'
         
-        # b. horizon
-        par.T = 5
-        
-        # c. preferences
-        par.beta = 0.96
-        par.Delta_dispersion = 0.01
-        par.beta_min = par.beta - par.Delta_dispersion
-        par.beta_max = par.beta + par.Delta_dispersion
-        par.betas = np.linspace(par.beta_min, par.beta_max, num=3) # possible beta values
-
-        # horizon and life cycle
+        # b. horizon and life cycle
         par.Tmin = 20 # age when entering the model
         par.T = 80 - par.Tmin # age of death
         par.Tr = 60 - par.Tmin # retirement age
         par.L = np.ones(par.T-1) # retirement profile
         par.L[par.Tr-1] = 0.67 #0.67 # drop in permanent income at retirement age
-
-
-        # uniform probabilities for each beta
-        par.beta_w = np.ones_like(par.betas) / len(par.betas)
-
-        # rho
-        par.rho = 2.0
-
-        # tax
-        par.tax_rate = 0.0 # tax rate (extention)
-
+        
+        # c. preferences
+        par.beta = 0.96
+        par.Delta_dispersion = 0.03
+        par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3)
+        
+        par.rho = 2.0 
+        
+        # tax (extension)
+        par.tax_rate = 0.3 # tax rate
+        par.tax_rate_vec = par.tax_rate * np.ones(par.T) # Used for simulating elasticities
+        
         # d. returns and income
         par.R = 1.03
         par.sigma_psi = 0.1
@@ -112,6 +103,7 @@ class BufferStockModelClass(ModelClass):
 
         # g. simulation
         par.simT = par.T
+        par.simBetas = par.Betas
         par.simN = 1000
         par.sim_seed = 1998
         
@@ -121,6 +113,7 @@ class BufferStockModelClass(ModelClass):
         self.create_grids()
         self.solve_prep()
         self.simulate_prep()
+        self.simulate_prep_rand()
 
     def create_grids(self):
         """ construct grids for states and shocks """
@@ -157,11 +150,13 @@ class BufferStockModelClass(ModelClass):
 
         par = self.par
         sol = self.sol
+        
+        num_betas = len(par.Betas)
 
-        sol.c = np.nan*np.ones((par.T,par.Np,par.Nm))        
-        sol.v = np.nan*np.zeros((par.T,par.Np,par.Nm))
-        sol.w = np.nan*np.zeros((par.Np,par.Na))
-        sol.q = np.nan*np.zeros((par.Np,par.Na))
+        sol.c = np.nan*np.ones((par.T,num_betas,par.Np,par.Nm))        
+        sol.v = np.nan*np.zeros((par.T,num_betas,par.Np,par.Nm))
+        sol.w = np.nan*np.zeros((num_betas,par.Np,par.Na))
+        sol.q = np.nan*np.zeros((num_betas,par.Np,par.Na))
 
     def solve(self):
         """ solve the model using solmethod """
@@ -171,48 +166,53 @@ class BufferStockModelClass(ModelClass):
             par = model.par
             sol = model.sol
 
+            num_betas = len(par.Betas)  # number of beta values
+
             # backwards induction
             for t in reversed(range(par.T)):
-                
-                t0 = time.time()
-                
-                # a. last period
-                if t == par.T-1:
-                    
-                    last_period.solve(t,sol,par)
+                for b in range(num_betas):  # iterate over beta indices
 
-                # b. all other periods
-                else:
-                    
-                    # i. compute post-decision functions
-                    t0_w = time.time()
+                    beta = par.Betas[b]  # set the current beta value
 
-                    compute_w,compute_q = False,False
-                    if par.solmethod in ['nvfi']: compute_w = True
-                    elif par.solmethod in ['egm']: compute_q = True
+                    t0 = time.time()
 
-                    if compute_w or compute_q:
+                    # a. last period
+                    if t == par.T-1:
 
-                        post_decision.compute_wq(t,sol,par,compute_w=compute_w,compute_q=compute_q)
+                        last_period.solve(t,b,sol,par)
 
-                    t1_w = time.time()
-
-                    # ii. solve bellman equation
-                    if par.solmethod == 'vfi':
-                        vfi.solve_bellman(t,sol,par)                    
-                    elif par.solmethod == 'nvfi':
-                        nvfi.solve_bellman(t,sol,par)
-                    elif par.solmethod == 'egm':
-                        egm.solve_bellman(t,sol,par)                    
+                    # b. all other periods
                     else:
-                        raise ValueError(f'unknown solution method, {par.solmethod}')
 
-                # c. print
-                if par.do_print:
-                    msg = f' t = {t} solved in {elapsed(t0)}'
-                    if t < par.T-1:
-                        msg += f' (w: {elapsed(t0_w,t1_w)})'                
-                    print(msg)
+                        # i. compute post-decision functions
+                        t0_w = time.time()
+
+                        compute_w,compute_q = False,False
+                        if par.solmethod in ['nvfi']: compute_w = True
+                        elif par.solmethod in ['egm']: compute_q = True
+
+                        if compute_w or compute_q:
+
+                            post_decision.compute_wq(t,b,sol,par,beta,compute_w=compute_w,compute_q=compute_q)
+
+                        t1_w = time.time()
+
+                        # ii. solve bellman equation
+                        if par.solmethod == 'vfi':
+                            vfi.solve_bellman(t,b,sol,par,beta)                    
+                        elif par.solmethod == 'nvfi':
+                            nvfi.solve_bellman(t,b,sol,par)
+                        elif par.solmethod == 'egm':
+                            egm.solve_bellman(t,b,sol,par)                    
+                        else:
+                            raise ValueError(f'unknown solution method, {par.solmethod}')
+
+                    # c. print
+                    if par.do_print:
+                        msg = f' t = {t} solved in {elapsed(t0)}'
+                        if t < par.T-1:
+                            msg += f' (w: {elapsed(t0_w,t1_w)})'                
+                        print(msg)
 
     ############
     # simulate #
@@ -223,12 +223,14 @@ class BufferStockModelClass(ModelClass):
 
         par = self.par
         sim = self.sim
+        num_betas = len(par.Betas)
 
         # a. allocate
-        sim.p = np.nan*np.zeros((par.simT,par.simN))
-        sim.m = np.nan*np.zeros((par.simT,par.simN))
-        sim.c = np.nan*np.zeros((par.simT,par.simN))
-        sim.a = np.nan*np.zeros((par.simT,par.simN))
+        sim.p = np.nan*np.zeros((par.simT,num_betas,par.simN))
+        sim.m = np.nan*np.zeros((par.simT,num_betas,par.simN))
+        sim.c = np.nan*np.zeros((par.simT,num_betas,par.simN))
+        sim.a = np.nan*np.zeros((par.simT,num_betas,par.simN))
+        sim.beta = np.random.choice(par.Betas, par.simN)
 
         # b. draw random shocks
         sim.psi = np.ones((par.simT,par.simN))
@@ -255,9 +257,56 @@ class BufferStockModelClass(ModelClass):
 
             # b. simulate
             simulate.lifecycle(sim,sol,par)
+            
+            if par.do_print:
+                print(f'model simulated in {elapsed(t0)}')
 
-        if par.do_print:
-            print(f'model simulated in {elapsed(t0)}')
+    def simulate_prep_rand(self):
+        """ allocate memory for simulation """
+
+        par = self.par
+        sim = self.sim
+        num_betas = len(par.Betas)
+
+        # a. allocate
+        sim.p_rand = np.nan*np.zeros((par.simT,par.simN))
+        sim.m_rand = np.nan*np.zeros((par.simT,par.simN))
+        sim.c_rand = np.nan*np.zeros((par.simT,par.simN))
+        sim.a_rand = np.nan*np.zeros((par.simT,par.simN))
+
+        # b. draw random shocks
+        sim.psi = np.ones((par.simT,par.simN))
+        sim.xi = np.ones((par.simT,par.simN))
+
+        # c. assign a random beta index to each individual
+        sim.beta_rand = np.random.choice(num_betas, par.simN)
+    
+    def simulate_rand(self):
+        """ simulate rand model """
+
+        with jit(self) as model: # can now call jitted functions 
+
+            par = model.par
+            sol = model.sol
+            sim = model.sim
+
+            t0 = time.time()
+
+            # a. allocate memory and draw random numbers
+            I = np.random.choice(par.Nshocks,
+                size=(par.T,par.simN), 
+                p=par.psi_w*par.xi_w)
+
+            sim.psi[:] = par.psi[I]
+            sim.xi[:] = par.xi[I]
+
+            # b. simulate
+            simulate.lifecycle_rand(sim,sol,par)
+
+            if par.do_print:
+                print(f'model simulated in {elapsed(t0)}')
+
+
 
     ########
     # figs #

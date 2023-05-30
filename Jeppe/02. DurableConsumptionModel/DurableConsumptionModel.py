@@ -58,7 +58,7 @@ class DurableConsumptionModelClass(ModelClass):
         """ set baseline parameters """
 
         par = self.par
-
+        
         # horizon and life cycle
         par.Tmin = 20 # age when entering the model
         par.T = 80 - par.Tmin # age of death
@@ -66,11 +66,14 @@ class DurableConsumptionModelClass(ModelClass):
         par.L = np.ones(par.T-1) # retirement profile
         par.L[par.Tr-1] = 0.67 # drop in permanent income at retirement age
 
-        # tax 
-        par.tax_rate = 0.4 # tax rate
+        # tax (extension)
+        par.tax_rate = 0.3 # tax rate
+        par.tax_rate_vec = par.tax_rate * np.ones(par.T) # allows for tax policies
         
         # preferences
-        par.beta = 0.965
+        par.beta = 0.96
+        par.Delta_dispersion = 0.02
+        par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3)
         par.rho = 2.0
         par.alpha = 0.9
         par.d_ubar = 1e-2
@@ -116,7 +119,6 @@ class DurableConsumptionModelClass(ModelClass):
         par.tol = 1e-8
         par.do_print = False
         par.do_print_period = False
-        #par.do_simple_wq = False # not using optimized interpolation in C++
         par.do_marg_u = False # calculate marginal utility for use in egm
         
     def allocate(self):
@@ -153,10 +155,10 @@ class DurableConsumptionModelClass(ModelClass):
         np.random.seed(par.sim_seed)
 
         # e. timing
-        par.time_w = np.zeros(par.T)
-        par.time_keep = np.zeros(par.T)
-        par.time_adj = np.zeros(par.T)
-        par.time_adj_full = np.zeros(par.T)
+        par.time_w = np.zeros((par.T,3))
+        par.time_keep = np.zeros((par.T,3))
+        par.time_adj = np.zeros((par.T,3))
+        par.time_adj_full = np.zeros((par.T,3))
 
     def checksum(self,simple=False,T=1):
         """ calculate and print checksum """
@@ -172,17 +174,18 @@ class DurableConsumptionModelClass(ModelClass):
 
         print('')
         for t in range(T):
+            for b in range(len(par.Betas)):
                 if t < par.T-1:
-                    print(f'checksum, inv_w: {np.mean(sol.inv_w[t]):.8f}')
-                    print(f'checksum, q: {np.mean(sol.q[t]):.8f}')
+                    print(f'checksum, inv_w: {np.mean(sol.inv_w[t,b]):.8f}')
+                    print(f'checksum, q: {np.mean(sol.q[t,b]):.8f}')
 
-                print(f'checksum, c_keep: {np.mean(sol.c_keep[t]):.8f}')
-                print(f'checksum, d_adj: {np.mean(sol.d_adj[t]):.8f}')
-                print(f'checksum, c_adj: {np.mean(sol.c_adj[t]):.8f}')
-                print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep[t]):.8f}')
-                print(f'checksum, inv_marg_u_keep: {np.mean(sol.inv_marg_u_keep[t]):.8f}')
-                print(f'checksum, inv_v_adj: {np.mean(sol.inv_v_adj[t]):.8f}')
-                print(f'checksum, inv_marg_u_adj: {np.mean(sol.inv_marg_u_adj[t]):.8f}')
+                print(f'checksum, c_keep: {np.mean(sol.c_keep[t,b]):.8f}')
+                print(f'checksum, d_adj: {np.mean(sol.d_adj[t,b]):.8f}')
+                print(f'checksum, c_adj: {np.mean(sol.c_adj[t,b]):.8f}')
+                print(f'checksum, inv_v_keep: {np.mean(sol.inv_v_keep[t,b]):.8f}')
+                print(f'checksum, inv_marg_u_keep: {np.mean(sol.inv_marg_u_keep[t,b]):.8f}')
+                print(f'checksum, inv_v_adj: {np.mean(sol.inv_v_adj[t,b]):.8f}')
+                print(f'checksum, inv_marg_u_adj: {np.mean(sol.inv_marg_u_adj[t,b]):.8f}')
                 print('')
 
 
@@ -240,19 +243,20 @@ class DurableConsumptionModelClass(ModelClass):
         sol = self.sol
 
         # a. standard
-        keep_shape = (par.T,par.Np,par.Nn,par.Nm)
+        num_betas = len(par.Betas)
+        keep_shape = (par.T,num_betas,par.Np,par.Nn,par.Nm)
         
         sol.c_keep = np.zeros(keep_shape)
         sol.inv_v_keep = np.zeros(keep_shape)
         sol.inv_marg_u_keep = np.zeros(keep_shape)
 
-        adj_shape = (par.T,par.Np,par.Nx)
+        adj_shape = (par.T,num_betas,par.Np,par.Nx)
         sol.d_adj = np.zeros(adj_shape)
         sol.c_adj = np.zeros(adj_shape)
         sol.inv_v_adj = np.zeros(adj_shape)
         sol.inv_marg_u_adj = np.zeros(adj_shape)
             
-        post_shape = (par.T-1,par.Np,par.Nn,par.Na)
+        post_shape = (par.T-1,num_betas,par.Np,par.Nn,par.Na)
         sol.inv_w = np.nan*np.zeros(post_shape)
         sol.q = np.nan*np.zeros(post_shape)
         sol.q_c = np.nan*np.zeros(post_shape)
@@ -268,91 +272,97 @@ class DurableConsumptionModelClass(ModelClass):
         """
 
         tic = time.time()
-            
+
         # backwards induction
         for t in reversed(range(self.par.T)):
+            print(t)
             
-            self.par.t = t
-
-            with jit(self) as model:
-
-                par = model.par
-                sol = model.sol
+            for b in range(len(self.par.Betas)):  # iterate over beta indices
+                print(b)
+                           
+                beta = self.par.Betas[b]  # set the current beta value
                 
-                # i. last period
-                if t == par.T-1:
+                self.par.t = t
 
-                    last_period.solve(t,sol,par)
+                with jit(self) as model:
 
-                    if do_assert:
-                        assert np.all((sol.c_keep[t] >= 0) & (np.isnan(sol.c_keep[t]) == False))
-                        assert np.all((sol.inv_v_keep[t] >= 0) & (np.isnan(sol.inv_v_keep[t]) == False))
-                        assert np.all((sol.d_adj[t] >= 0) & (np.isnan(sol.d_adj[t]) == False))
-                        assert np.all((sol.c_adj[t] >= 0) & (np.isnan(sol.c_adj[t]) == False))
-                        assert np.all((sol.inv_v_adj[t] >= 0) & (np.isnan(sol.inv_v_adj[t]) == False))
+                    par = model.par
+                    sol = model.sol
 
-                # ii. all other periods
-                else:
-                    
-                    # o. compute post-decision functions
-                    tic_w = time.time()
+                    # i. last period
+                    if t == par.T-1:
 
-                    if par.solmethod in ['nvfi']:
-                        post_decision.compute_wq(t,sol,par)
-                    elif par.solmethod in ['negm']:
-                        post_decision.compute_wq(t,sol,par,compute_q=True)                
+                        last_period.solve(t,b,sol,par)
 
-                    toc_w = time.time()
-                    par.time_w[t] = toc_w-tic_w
-                    if par.do_print:
-                        print(f'  w computed in {toc_w-tic_w:.1f} secs')
+                        if do_assert:
+                            assert np.all((sol.c_keep[t,b] >= 0) & (np.isnan(sol.c_keep[t,b]) == False))
+                            assert np.all((sol.inv_v_keep[t,b] >= 0) & (np.isnan(sol.inv_v_keep[t,b]) == False))
+                            assert np.all((sol.d_adj[t,b] >= 0) & (np.isnan(sol.d_adj[t,b]) == False))
+                            assert np.all((sol.c_adj[t,b] >= 0) & (np.isnan(sol.c_adj[t,b]) == False))
+                            assert np.all((sol.inv_v_adj[t,b] >= 0) & (np.isnan(sol.inv_v_adj[t,b]) == False))
 
-                    if do_assert and par.solmethod in ['nvfi','negm']:
-                        assert np.all((sol.inv_w[t] > 0) & (np.isnan(sol.inv_w[t]) == False)), t 
-                        if par.solmethod in ['negm']:                                                       
-                            assert np.all((sol.q[t] > 0) & (np.isnan(sol.q[t]) == False)), t
+                    # ii. all other periods
+                    else:
 
-                    # oo. solve keeper problem
-                    tic_keep = time.time()
-                    
-                    if par.solmethod == 'vfi':
-                        vfi.solve_keep(t,sol,par)
-                    elif par.solmethod == 'nvfi':                
-                        nvfi.solve_keep(t,sol,par)
-                    elif par.solmethod == 'negm':
-                        negm.solve_keep(t,sol,par)                                       
+                        # o. compute post-decision functions
+                        tic_w = time.time()
 
-                    toc_keep = time.time()
-                    par.time_keep[t] = toc_keep-tic_keep
-                    if par.do_print:
-                        print(f'  solved keeper problem in {toc_keep-tic_keep:.1f} secs')
+                        if par.solmethod in ['nvfi']:
+                            post_decision.compute_wq(t,b,sol,par,beta)
+                        elif par.solmethod in ['negm']:
+                            post_decision.compute_wq(t,b,sol,par,beta,compute_q=True)                
 
-                    if do_assert:
-                        assert np.all((sol.c_keep[t] >= 0) & (np.isnan(sol.c_keep[t]) == False)), t
-                        assert np.all((sol.inv_v_keep[t] >= 0) & (np.isnan(sol.inv_v_keep[t]) == False)), t
+                        toc_w = time.time()
+                        par.time_w[t,b] = toc_w-tic_w
+                        if par.do_print:
+                            print(f'  w computed in {toc_w-tic_w:.1f} secs')
 
-                    # ooo. solve adjuster problem
-                    tic_adj = time.time()
-                    
-                    if par.solmethod == 'vfi':
-                        vfi.solve_adj(t,sol,par)
-                    elif par.solmethod in ['nvfi','negm']:
-                        nvfi.solve_adj(t,sol,par)
+                        if do_assert and par.solmethod in ['nvfi','negm']:
+                            assert np.all((sol.inv_w[t,b] > 0) & (np.isnan(sol.inv_w[t,b]) == False)), t 
+                            if par.solmethod in ['negm']:                                                       
+                                assert np.all((sol.q[t,b] > 0) & (np.isnan(sol.q[t,b]) == False)), t
 
-                    toc_adj = time.time()
-                    par.time_adj[t] = toc_adj-tic_adj
-                    if par.do_print:
-                        print(f'  solved adjuster problem in {toc_adj-tic_adj:.1f} secs')
+                        # oo. solve keeper problem
+                        tic_keep = time.time()
 
-                    if do_assert:
-                        assert np.all((sol.d_adj[t] >= 0) & (np.isnan(sol.d_adj[t]) == False)), t
-                        assert np.all((sol.c_adj[t] >= 0) & (np.isnan(sol.c_adj[t]) == False)), t
-                        assert np.all((sol.inv_v_adj[t] >= 0) & (np.isnan(sol.inv_v_adj[t]) == False)), t
+                        if par.solmethod == 'vfi':
+                            vfi.solve_keep(t,b,sol,par,beta)
+                        elif par.solmethod == 'nvfi':                
+                            nvfi.solve_keep(t,b,sol,par)
+                        elif par.solmethod == 'negm':
+                            negm.solve_keep(t,b,sol,par)                                       
 
-                # iii. print
-                toc = time.time()
-                if par.do_print or par.do_print_period:
-                    print(f' t = {t} solved in {toc-tic:.1f} secs')
+                        toc_keep = time.time()
+                        par.time_keep[t,b] = toc_keep-tic_keep
+                        if par.do_print:
+                            print(f'  solved keeper problem in {toc_keep-tic_keep:.1f} secs')
+
+                        if do_assert:
+                            assert np.all((sol.c_keep[t,b] >= 0) & (np.isnan(sol.c_keep[t,b]) == False)), t
+                            assert np.all((sol.inv_v_keep[t,b] >= 0) & (np.isnan(sol.inv_v_keep[t,b]) == False)), t
+
+                        # ooo. solve adjuster problem
+                        tic_adj = time.time()
+
+                        if par.solmethod == 'vfi':
+                            vfi.solve_adj(t,b,sol,par,beta)
+                        elif par.solmethod in ['nvfi','negm']:
+                            nvfi.solve_adj(t,b,sol,par)
+
+                        toc_adj = time.time()
+                        par.time_adj[t,b] = toc_adj-tic_adj
+                        if par.do_print:
+                            print(f'  solved adjuster problem in {toc_adj-tic_adj:.1f} secs')
+
+                        if do_assert:
+                            assert np.all((sol.d_adj[t,b] >= 0) & (np.isnan(sol.d_adj[t,b]) == False)), t
+                            assert np.all((sol.c_adj[t,b] >= 0) & (np.isnan(sol.c_adj[t,b]) == False)), t
+                            assert np.all((sol.inv_v_adj[t,b] >= 0) & (np.isnan(sol.inv_v_adj[t,b]) == False)), t
+
+                    # iii. print
+                    toc = time.time()
+                    if par.do_print or par.do_print_period:
+                        print(f' t = {t} solved in {toc-tic:.1f} secs')
 
     ############
     # simulate #
@@ -365,14 +375,14 @@ class DurableConsumptionModelClass(ModelClass):
         sim = self.sim
 
         # a. initial and final
-        sim.p0 = np.zeros(par.simN)
-        sim.d0 = np.zeros(par.simN)
-        sim.a0 = np.zeros(par.simN)
+        sim.p0 = np.zeros((len(par.Betas),par.simN))
+        sim.d0 = np.zeros((len(par.Betas),par.simN))
+        sim.a0 = np.zeros((len(par.Betas),par.simN))
 
-        sim.utility = np.zeros(par.simN)
+        sim.utility = np.zeros(((len(par.Betas),par.simN)))
 
         # b. states and choices
-        sim_shape = (par.T,par.simN)
+        sim_shape = (par.T,len(par.Betas),par.simN)
         sim.p = np.zeros(sim_shape)
         sim.m = np.zeros(sim_shape)
         sim.n = np.zeros(sim_shape)
@@ -382,7 +392,7 @@ class DurableConsumptionModelClass(ModelClass):
         sim.a = np.zeros(sim_shape)
         
         # c. euler
-        euler_shape = (par.T-1,par.simN)
+        euler_shape = (par.T-1,len(par.Betas),par.simN)
         sim.euler_error = np.zeros(euler_shape)
         sim.euler_error_c = np.zeros(euler_shape)
         sim.euler_error_rel = np.zeros(euler_shape)
@@ -438,7 +448,7 @@ class DurableConsumptionModelClass(ModelClass):
                 sol = model.sol
                 sim = model.sim
 
-                simulate.euler_errors(sim,sol,par)
+                simulate.euler_errors(sim,sol,par,beta)
             
             sim.euler_error_rel[:] = norm_euler_errors(self)
         
