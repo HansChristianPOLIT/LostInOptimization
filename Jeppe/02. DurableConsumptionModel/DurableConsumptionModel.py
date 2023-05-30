@@ -390,6 +390,7 @@ class DurableConsumptionModelClass(ModelClass):
         sim.d = np.zeros(sim_shape)
         sim.c = np.zeros(sim_shape)
         sim.a = np.zeros(sim_shape)
+        sim.y = np.zeros(sim_shape)
         
         # c. euler
         euler_shape = (par.T-1,len(par.Betas),par.simN)

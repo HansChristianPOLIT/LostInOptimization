@@ -231,6 +231,8 @@ class BufferStockModelClass(ModelClass):
         sim.c = np.nan*np.zeros((par.simT,num_betas,par.simN))
         sim.a = np.nan*np.zeros((par.simT,num_betas,par.simN))
         sim.beta = np.random.choice(par.Betas, par.simN)
+        
+        sim.y = np.nan*np.zeros((par.simT,num_betas,par.simN))
 
         # b. draw random shocks
         sim.psi = np.ones((par.simT,par.simN))
@@ -273,6 +275,7 @@ class BufferStockModelClass(ModelClass):
         sim.m_rand = np.nan*np.zeros((par.simT,par.simN))
         sim.c_rand = np.nan*np.zeros((par.simT,par.simN))
         sim.a_rand = np.nan*np.zeros((par.simT,par.simN))
+        sim.y_rand = np.nan*np.zeros((par.simT,par.simN))
 
         # b. draw random shocks
         sim.psi = np.ones((par.simT,par.simN))

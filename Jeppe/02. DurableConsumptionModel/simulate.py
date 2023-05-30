@@ -19,6 +19,7 @@ def lifecycle(sim,sol,par):
     c = sim.c
     d = sim.d
     a = sim.a
+    y = sim.y
     discrete = sim.discrete
     
     for t in range(par.T):
@@ -34,6 +35,8 @@ def lifecycle(sim,sol,par):
                     p[t,b,i] = trans.p_plus_func(p[t-1,b,i],sim.psi[t,i],par,t-1)
                     n[t,b,i] = trans.n_plus_func(d[t-1,b,i],par)
                     m[t,b,i] = trans.m_plus_func(a[t-1,b,i],p[t,b,i],sim.xi[t,i],par,t)
+                
+                y[t,b,i] = p[t,b,i] * sim.xi[t,i]
 
                 # b. optimal choices and post decision states
                 optimal_choice(t,b,p[t,b,i],n[t,b,i],m[t,b,i],discrete[t,b,i:],d[t,b,i:],c[t,b,i:],a[t,b,i:],sol,par)

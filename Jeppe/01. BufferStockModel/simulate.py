@@ -13,6 +13,7 @@ def lifecycle(sim,sol,par):
     m = sim.m
     c = sim.c
     a = sim.a
+    y = sim.y
     
     for t in range(int(par.simT)):
         for b in range(len(par.Betas)):
@@ -28,6 +29,8 @@ def lifecycle(sim,sol,par):
                 else:
                     p[t,b,i] = p[t-1,b,i]*par.L[t-1]
                     m[t,b,i] = par.R*a[t-1,b,i] + (1-par.tax_rate_vec[t])*p[t,b,i]
+                    
+                y[t,b,i] = p[t,b,i] * sim.xi[t,i]
 
                 # b. choices
                 c[t,b,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,b,i],m[t,b,i])
@@ -42,6 +45,7 @@ def lifecycle_rand(sim,sol,par):
     m = sim.m_rand
     c = sim.c_rand
     a = sim.a_rand
+    y = sim.y_rand
     
     # use pre-assigned beta indices for each individual
     beta_indices = sim.beta_rand
@@ -60,6 +64,8 @@ def lifecycle_rand(sim,sol,par):
             else:
                 p[t,i] = p[t-1,i]*par.L[t-1]
                 m[t,i] = par.R*a[t-1,i] + (1-par.tax_rate_vec[t])*p[t,i]
+                
+            y[t,i] = p[t,i] * sim.xi[t,i]
 
             # b. choices
             c[t,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,i],m[t,i])
