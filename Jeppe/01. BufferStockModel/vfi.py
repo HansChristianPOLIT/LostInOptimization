@@ -9,7 +9,7 @@ import utility
 
 # a. define objective function
 @njit
-def obj_bellman(c,p,m,v_plus,b,par,beta):
+def obj_bellman(t,c,p,m,v_plus,b,par,beta):
     """ evaluate bellman equation """
 
     # a. end-of-period assets
@@ -27,9 +27,9 @@ def obj_bellman(c,p,m,v_plus,b,par,beta):
 
         # ii. next-period states
         if t<=par.Tr:
-            p_plus = p*psi*par.L[t]
+            p_plus = p*psi*par.L[int(t)]
         else: 
-            p_plus = p*par.L[t] 
+            p_plus = p*par.L[int(t)] 
         
         if t<=par.Tr:
             y_plus = p_plus*xi
@@ -73,11 +73,8 @@ def solve_bellman(t, b, sol, par,beta):
                 # b. optimal choice
                 c_low = np.fmin(m/2,1e-8)
                 c_high = m
-                c[ip,im] = golden_section_search.optimizer(obj_bellman, c_low, c_high, args=(p, m, sol.v[t+1, b], b, par, beta), tol=par.tol)
-
-
-                # note: the above finds the minimum of obj_bellman in range [c_low,c_high] with a tolerance of par.tol
-                # and arguments (except for c) as specified 
+                c[ip,im] = golden_section_search.optimizer(obj_bellman, c_low, c_high, args=(t,p, m, sol.v[t+1, b], b, par, beta), tol=par.tol)
 
                 # c. optimal value
-                v[ip,im] = -obj_bellman(c[ip,im], p, m, sol.v[t+1, b], b, par, beta)
+                v[ip,im] = -obj_bellman(t,c[ip,im], p, m, sol.v[t+1, b], b, par, beta)
+

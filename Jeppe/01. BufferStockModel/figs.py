@@ -100,6 +100,8 @@ def lifecycle(model):
             legend = ax.legend(frameon=True,prop={'size': 8})
             frame = legend.get_frame()
             frame.set_edgecolor('black')
+            
+    plt.savefig("one_asset_lifecycle_plot.pdf", bbox_inches='tight')
 
     plt.show()
 

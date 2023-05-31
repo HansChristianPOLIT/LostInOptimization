@@ -79,7 +79,7 @@ class DurableConsumptionModelClass(ModelClass):
         par.d_ubar = 4e-3
 
         # returns and income
-        par.R = 1.01
+        par.R = 1.03
         par.tau = 0.10
         par.delta = 0.15
 

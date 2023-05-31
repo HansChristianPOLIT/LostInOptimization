@@ -289,8 +289,8 @@ def lifecycle_rand(model):
     simvarlist = [('p','(A): Permanent income, $p_t$'),
                   ('n','(B): Housing stock, $n_t$'),
                   ('m','(C): Cash-on-hand, $m_t$'),
-                  ('c','(D): Consumption, ,$c_t$'),
-                  ('a','(E): Savings, ,$a_t$'),
+                  ('c','(D): Consumption, $c_t$'),
+                  ('a','(E): Savings, $a_t$'),
                   ('discrete','(F): Adjuster share (in percent)')]
 
     age = np.arange(par.T)

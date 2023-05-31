@@ -73,15 +73,16 @@ class BufferStockModelClass(ModelClass):
         par.L[par.Tr-1] = 0.67 #0.67 # drop in permanent income at retirement age
         
         # c. preferences
-        par.beta = 0.96
-        par.Delta_dispersion = 0.03
+        par.beta = 0.95
+        par.Delta_dispersion = 0.02
         par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3)
         
         par.rho = 2.0 
         
         # tax (extension)
-        par.tax_rate = 0.3 # tax rate
+        par.tax_rate = 0.51 # tax rate
         par.tax_rate_vec = par.tax_rate * np.ones(par.T) # Used for simulating elasticities
+        par.eps = 0.00749 # deduced tax rebate from Kaplan & Violante 2022
         
         # d. returns and income
         par.R = 1.03
@@ -89,7 +90,7 @@ class BufferStockModelClass(ModelClass):
         par.Npsi = 6
         par.sigma_xi = 0.1
         par.Nxi = 6
-        par.pi = 0.1
+        par.pi = 0.0
         par.mu = 0.5
         
         # e. grids (number of points)
@@ -103,7 +104,6 @@ class BufferStockModelClass(ModelClass):
 
         # g. simulation
         par.simT = par.T
-        par.simBetas = par.Betas
         par.simN = 1000
         par.sim_seed = 1998
         
@@ -224,15 +224,21 @@ class BufferStockModelClass(ModelClass):
         par = self.par
         sim = self.sim
         num_betas = len(par.Betas)
-
-        # a. allocate
-        sim.p = np.nan*np.zeros((par.simT,num_betas,par.simN))
-        sim.m = np.nan*np.zeros((par.simT,num_betas,par.simN))
-        sim.c = np.nan*np.zeros((par.simT,num_betas,par.simN))
-        sim.a = np.nan*np.zeros((par.simT,num_betas,par.simN))
-        sim.beta = np.random.choice(par.Betas, par.simN)
         
-        sim.y = np.nan*np.zeros((par.simT,num_betas,par.simN))
+        # a. allocate
+        sim_shape = (par.simT,num_betas,par.simN)
+        sim.p = np.nan*np.zeros(sim_shape)
+        sim.m = np.nan*np.zeros(sim_shape)
+        sim.c = np.nan*np.zeros(sim_shape)
+        sim.a = np.nan*np.zeros(sim_shape)
+        sim.y = np.nan*np.zeros(sim_shape)
+        
+        # MPC
+        sim.mpc = np.nan*np.zeros(sim_shape)
+        sim.c_eps = np.zeros(sim_shape)
+        
+        # random uniform draws of time preference
+        sim.beta = np.random.choice(par.Betas, par.simN)
 
         # b. draw random shocks
         sim.psi = np.ones((par.simT,par.simN))
@@ -271,15 +277,20 @@ class BufferStockModelClass(ModelClass):
         num_betas = len(par.Betas)
 
         # a. allocate
-        sim.p_rand = np.nan*np.zeros((par.simT,par.simN))
-        sim.m_rand = np.nan*np.zeros((par.simT,par.simN))
-        sim.c_rand = np.nan*np.zeros((par.simT,par.simN))
-        sim.a_rand = np.nan*np.zeros((par.simT,par.simN))
-        sim.y_rand = np.nan*np.zeros((par.simT,par.simN))
+        sim_rand_shape = (par.simT,par.simN)
+        sim.p_rand = np.nan*np.zeros(sim_rand_shape)
+        sim.m_rand = np.nan*np.zeros(sim_rand_shape)
+        sim.c_rand = np.nan*np.zeros(sim_rand_shape)
+        sim.a_rand = np.nan*np.zeros(sim_rand_shape)
+        sim.y_rand = np.nan*np.zeros(sim_rand_shape)
+        
+        # MPC
+        sim.mpc_rand = np.nan*np.zeros(sim_rand_shape)
+        sim.c_eps_rand = np.nan*np.zeros(sim_rand_shape)
 
         # b. draw random shocks
-        sim.psi = np.ones((par.simT,par.simN))
-        sim.xi = np.ones((par.simT,par.simN))
+        sim.psi = np.ones(sim_rand_shape)
+        sim.xi = np.ones(sim_rand_shape)
 
         # c. assign a random beta index to each individual
         sim.beta_rand = np.random.choice(num_betas, par.simN)
@@ -310,7 +321,6 @@ class BufferStockModelClass(ModelClass):
                 print(f'model simulated in {elapsed(t0)}')
 
 
-
     ########
     # figs #
     ########
@@ -322,4 +332,10 @@ class BufferStockModelClass(ModelClass):
         figs.consumption_function_interact(self)
           
     def lifecycle(self):
-        figs.lifecycle(self)        
+        figs.lifecycle(self)    
+        
+    def beta_check(self):
+        figs.beta_check(self)
+            
+    def beta_check_simple(self):
+        figs.beta_check_simple(self)

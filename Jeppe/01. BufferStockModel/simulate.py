@@ -15,6 +15,10 @@ def lifecycle(sim,sol,par):
     a = sim.a
     y = sim.y
     
+    # MPC
+    mpc = sim.mpc
+    c_eps = sim.c_eps
+    
     for t in range(int(par.simT)):
         for b in range(len(par.Betas)):
             for i in prange(par.simN): # in parallel
@@ -35,6 +39,11 @@ def lifecycle(sim,sol,par):
                 # b. choices
                 c[t,b,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,b,i],m[t,b,i])
                 a[t,b,i] = m[t,b,i]-c[t,b,i]
+                
+                # c. MPC
+                c_eps[t,b,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,b,i],m[t,b,i] + par.eps)
+                mpc[t,b,i] = (c_eps[t,b,i] - c[t,b,i]) / par.eps
+
 
 @njit(parallel=True)
 def lifecycle_rand(sim,sol,par):
@@ -46,6 +55,10 @@ def lifecycle_rand(sim,sol,par):
     c = sim.c_rand
     a = sim.a_rand
     y = sim.y_rand
+    
+    # MPC
+    mpc_rand = sim.mpc_rand
+    c_eps_rand = sim.c_eps_rand
     
     # use pre-assigned beta indices for each individual
     beta_indices = sim.beta_rand
@@ -70,5 +83,9 @@ def lifecycle_rand(sim,sol,par):
             # b. choices
             c[t,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,i],m[t,i])
             a[t,i] = m[t,i]-c[t,i]
+            
+            # c. MPC
+            c_eps_rand[t,i] = linear_interp.interp_2d(par.grid_p,par.grid_m,sol.c[t,b],p[t,i],m[t,i] + par.eps)
+            mpc_rand[t,i] = (c_eps_rand[t,i] - c[t,i]) / par.eps
 
 
