@@ -266,6 +266,13 @@ def lifecycle(model):
         else:
             ax.xaxis.set_ticks(age)
 
+        # Change x-axis labels to show 20 years later
+        xticks = np.arange(0, 61, 5)  # make sure it includes the last value you want to display
+        ax.set_xticks(xticks)
+        new_xticks = xticks + 20
+        ax.set_xticklabels(new_xticks)
+        ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
+
         ax.grid(True)
         ax.set_xlabel('age')
         legend = ax.legend(frameon=True,prop={'size': 8})
@@ -288,6 +295,7 @@ def lifecycle_rand(model):
 
     simvarlist = [('p','(A): Permanent income, $p_t$'),
                   ('n','(B): Housing stock, $n_t$'),
+                  ('d','Household decision, $d_t$'),
                   ('m','(C): Cash-on-hand, $m_t$'),
                   ('c','(D): Consumption, $c_t$'),
                   ('a','(E): Savings, $a_t$'),
@@ -296,7 +304,7 @@ def lifecycle_rand(model):
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
 
-        ax = fig.add_subplot(3,2,i+1)
+        ax = fig.add_subplot(4,2,i+1)
 
         simdata_raw = getattr(sim,simvar)[:par.T,:]  # get the raw simulation data
         simdata = np.mean(simdata_raw, axis=1)  # aggregate over the second dimension
@@ -324,6 +332,13 @@ def lifecycle_rand(model):
             ax.xaxis.set_ticks(age[::5])
         else:
             ax.xaxis.set_ticks(age)
+
+        # Change x-axis labels to show 20 years later
+        xticks = np.arange(0, 61, 5)  # make sure it includes the last value you want to display
+        ax.set_xticks(xticks)
+        new_xticks = xticks + 20
+        ax.set_xticklabels(new_xticks)
+        ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
         ax.grid(True)
         if simvar in ['a','discrete']:

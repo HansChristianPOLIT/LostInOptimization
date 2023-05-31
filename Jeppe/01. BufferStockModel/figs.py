@@ -90,7 +90,7 @@ def lifecycle(model):
         ax.set_xticks(xticks)
         new_xticks = xticks + 20
         ax.set_xticklabels(new_xticks)
-        ax.set_xlim(-3, 65)  # increase the upper limit of x-axis
+        ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
         ax.grid(True)
         if simvar in ['c','a']:
@@ -134,6 +134,13 @@ def beta_check(model):
                 # plot mean data
                 ax.plot(age, mean_data, label=simvarlatex)
 
+            # Change x-axis labels to show 20 years later
+            xticks = np.arange(0, 61, 5)  # make sure it includes the last value you want to display
+            ax.set_xticks(xticks)
+            new_xticks = xticks + 20
+            ax.set_xticklabels(new_xticks)
+            ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
+
             ax.grid(True)
             ax.set_xlabel('age')
             ax.set_title(f'Beta {b+1}')
@@ -166,6 +173,14 @@ def beta_check_simple(model):
 
         simdata = getattr(sim,simvar+'_rand')
         ax.plot(age,np.mean(simdata,axis=1),lw=2,label=simvarlatex)
+
+
+    # Change x-axis labels to show 20 years later
+    xticks = np.arange(0, 61, 5)  # make sure it includes the last value you want to display
+    ax.set_xticks(xticks)
+    new_xticks = xticks + 20
+    ax.set_xticklabels(new_xticks)
+    ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
     ax.legend(frameon=True)
     ax.grid(True)
