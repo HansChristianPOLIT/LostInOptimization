@@ -87,7 +87,8 @@ def optimal_choice(t,b,p,n,m,discrete,d,c,a,sol,par):
             c[0] = m
             a[0] = 0.0
         else:
-            a[0] = m - c[0]        
+            a[0] = m - c[0]     
+            
 
 @njit            
 def euler_errors(sim,sol,par):
@@ -159,5 +160,3 @@ def calc_utility(sim,sol,par):
             for i in prange(par.simN):
 
                 u[i] += beta**t*utility.func(sim.c[t,b,i],sim.d[t,b,i],par)
-
-

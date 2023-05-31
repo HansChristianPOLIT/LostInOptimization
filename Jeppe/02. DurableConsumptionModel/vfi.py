@@ -29,9 +29,9 @@ def value_of_choice(t,b,c,d,p,x,inv_v_keep,inv_v_adj,par,beta):
         xi_w = par.xi_w[ishock]
         
         # ii. next-period states
-        p_plus = trans.p_plus_func(p,psi,par)
+        p_plus = trans.p_plus_func(p,psi,par,t)
         n_plus = trans.n_plus_func(d,par)
-        m_plus = trans.m_plus_func(a,p_plus,xi,par)
+        m_plus = trans.m_plus_func(a,p_plus,xi,par,t)
         x_plus = trans.x_plus_func(m_plus,n_plus,par)
         
         # iii. weight

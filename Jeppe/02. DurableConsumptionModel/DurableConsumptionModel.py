@@ -379,7 +379,7 @@ class DurableConsumptionModelClass(ModelClass):
         sim.d0 = np.zeros((len(par.Betas),par.simN))
         sim.a0 = np.zeros((len(par.Betas),par.simN))
 
-        sim.utility = np.zeros(((len(par.Betas),par.simN)))
+        sim.utility = np.zeros((len(par.Betas),par.simN))
 
         # b. states and choices
         sim_shape = (par.T,len(par.Betas),par.simN)
@@ -412,9 +412,9 @@ class DurableConsumptionModelClass(ModelClass):
         tic = time.time()
 
         # a. random shocks
-        sim.p0[:] = np.random.lognormal(mean=0,sigma=par.sigma_p0,size=par.simN)
-        sim.d0[:] = par.mu_d0*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=par.simN)
-        sim.a0[:] = par.mu_a0*np.random.lognormal(mean=0,sigma=par.sigma_a0,size=par.simN)
+        sim.p0[:,:] = np.random.lognormal(mean=0,sigma=par.sigma_p0,size=(len(par.Betas),par.simN))
+        sim.d0[:,:] = par.mu_d0*np.random.lognormal(mean=0,sigma=par.sigma_d0,size=(len(par.Betas),par.simN))
+        sim.a0[:,:] = par.mu_a0*np.random.lognormal(mean=0,sigma=par.sigma_a0,size=(len(par.Betas),par.simN))
 
         I = np.random.choice(par.Nshocks,
             size=(par.T,par.simN), 
@@ -464,8 +464,8 @@ class DurableConsumptionModelClass(ModelClass):
         
         toc = time.time()
         if par.do_print:
-            print(f'utility calculated in {toc-tic:.1f} secs')
-
+            print(f'utility calculated in {toc-tic:.1f} secs')    
+    
     ########
     # figs #
     ########
@@ -478,6 +478,9 @@ class DurableConsumptionModelClass(ModelClass):
 
     def lifecycle(self):        
         figs.lifecycle(self)
+        
+    def lifecycle_rand(self):        
+        figs.lifecycle_rand(self)
 
     ###########
     # analyze #

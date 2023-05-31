@@ -236,6 +236,53 @@ def lifecycle(model):
     par = model.par
     sim = model.sim
 
+    simvarlist = [('p','(A): Permanent income, $p_t$'),
+                  ('n','(B): Housing stock, $n_t$'),
+                  ('m','(C): Cash-on-hand, $m_t$'),
+                  ('c','(D): Consumption, ,$c_t$'),
+                  ('a','(E): Savings, ,$a_t$'),
+                  ('discrete','(F): ,Adjuster share')]
+
+    # b. figure
+    fig, axs = plt.subplots(2, 3, figsize=(12, 12))
+
+    age = np.arange(par.T)
+    for i, (simvar, simvarlatex) in enumerate(simvarlist): # Loop over different simulation variables
+        ax = axs[i // 3, i % 3]  # specify the current subplot
+
+        for b in range(len(par.Betas)): # Loop over different beta values
+            # get simulation data for this beta value
+            simdata = getattr(sim, simvar)[:, b, :]
+
+            # calculate mean over individual dimension for each beta
+            mean_data = np.mean(simdata, axis=1)
+
+            # plot mean data
+            ax.plot(age, mean_data, label=f'{simvarlatex}, Beta {b+1}')
+
+        ax.set_title(simvarlatex)
+        if par.T > 10:
+            ax.xaxis.set_ticks(age[::5])
+        else:
+            ax.xaxis.set_ticks(age)
+
+        ax.grid(True)
+        ax.set_xlabel('age')
+        legend = ax.legend(frameon=True,prop={'size': 8})
+        frame = legend.get_frame()
+        frame.set_edgecolor('black')
+
+    # adjust layout for better visualization
+    plt.tight_layout()
+    plt.show()
+
+    
+def lifecycle_rand(model):
+
+    # a. unpack
+    par = model.par
+    sim = model.sim
+
     # b. figure
     fig = plt.figure(figsize=(12,12))
 
@@ -244,14 +291,18 @@ def lifecycle(model):
                   ('m','(C): Cash-on-hand, $m_t$'),
                   ('c','(D): Consumption, ,$c_t$'),
                   ('a','(E): Savings, ,$a_t$'),
-                  ('discrete','(F): ,Adjuster share')]
+                  ('discrete','(F): Adjuster share (in percent)')]
 
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
 
         ax = fig.add_subplot(3,2,i+1)
 
-        simdata = getattr(sim,simvar+'_rand')[:par.T,:]
+        simdata_raw = getattr(sim,simvar)[:par.T,:]  # get the raw simulation data
+        simdata = np.mean(simdata_raw, axis=1)  # aggregate over the second dimension
+
+        if simvar == 'discrete':
+            simdata *= 100  # Convert to percentage
 
         # mean graph
         ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
@@ -267,7 +318,7 @@ def lifecycle(model):
             ls='--',lw=1,color='red', label='25% quantile')
         ax.plot(age,np.percentile(simdata,10,axis=1),
             ls='--',lw=1,color='green', label='10% quantile')
-        
+
         ax.set_title(simvarlatex)
         if par.T > 10:
             ax.xaxis.set_ticks(age[::5])
@@ -277,6 +328,9 @@ def lifecycle(model):
         ax.grid(True)
         if simvar in ['a','discrete']:
             ax.set_xlabel('age')
+
+        if simvar == 'discrete':
+            ax.set_ylabel('percent')
 
         if simvar in ['p']:
             legend = ax.legend(frameon=True,prop={'size': 8})
