@@ -82,7 +82,7 @@ class BufferStockModelClass(ModelClass):
         # tax (extension)
         par.tax_rate = 0.51 # tax rate
         par.tax_rate_vec = par.tax_rate * np.ones(par.T) # Used for simulating elasticities
-        par.eps = 0.00749 # deduced tax rebate from Kaplan & Violante 2022
+        par.eps = 0.0065648 # deduced tax rebate from Kaplan & Violante 2022
         
         # d. returns and income
         par.R = 1.03
