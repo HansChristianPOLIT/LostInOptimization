@@ -85,6 +85,13 @@ def lifecycle(model):
         else:
             ax.xaxis.set_ticks(age)
 
+        # Change x-axis labels to show 20 years later
+        xticks = np.arange(0, 61, 5)  # make sure it includes the last value you want to display
+        ax.set_xticks(xticks)
+        new_xticks = xticks + 20
+        ax.set_xticklabels(new_xticks)
+        ax.set_xlim(-3, 65)  # increase the upper limit of x-axis
+
         ax.grid(True)
         if simvar in ['c','a']:
             ax.set_xlabel('age')
