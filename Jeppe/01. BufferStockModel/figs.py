@@ -95,3 +95,69 @@ def lifecycle(model):
             frame.set_edgecolor('black')
 
     plt.show()
+
+def beta_check(model):
+
+        # a. unpack
+        par = model.par
+        sim = model.sim
+
+        # b. figure
+        fig, axs = plt.subplots(len(par.Betas), 1, figsize=(10, 8))
+
+        simvarlist = [('m','$m_t$'),
+                    ('c','$c_t$'),
+                    ('a','$a_t$'),
+                    ('y','$y_t$')]
+
+        age = np.arange(par.T)
+
+        for b in range(len(par.Betas)):  # loop over beta dimension
+            ax = axs[b]  # specify the current subplot
+
+            for simvar, simvarlatex in simvarlist:
+                # get simulation data
+                simdata = getattr(sim, simvar)
+
+                # calculate mean over individual dimension for each beta
+                mean_data = np.mean(simdata[:, b, :], axis=1)
+
+                # plot mean data
+                ax.plot(age, mean_data, label=simvarlatex)
+
+            ax.grid(True)
+            ax.set_xlabel('age')
+            ax.set_title(f'Beta {b+1}')
+            ax.legend()
+
+        # adjust layout for better visualization
+        plt.tight_layout()
+        plt.show()
+
+
+def beta_check_simple(model):
+
+    # a. unpack
+    par = model.par
+    sim = model.sim
+
+    # b. figure
+    fig = plt.figure()
+
+    simvarlist = [('m','$m_t$'),
+                ('c','$c_t$'),
+                ('a','$a_t$'),
+                ('y','$y_t$'),
+                ('p','$p_t$')]
+
+    age = np.arange(par.T)
+    ax = fig.add_subplot(1,1,1)
+
+    for simvar,simvarlatex in simvarlist:
+
+        simdata = getattr(sim,simvar+'_rand')
+        ax.plot(age,np.mean(simdata,axis=1),lw=2,label=simvarlatex)
+
+    ax.legend(frameon=True)
+    ax.grid(True)
+    ax.set_xlabel('age')
