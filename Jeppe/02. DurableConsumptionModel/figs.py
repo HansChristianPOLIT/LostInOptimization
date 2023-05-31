@@ -239,26 +239,35 @@ def lifecycle(model):
     # b. figure
     fig = plt.figure(figsize=(12,12))
 
-    simvarlist = [('p','$p_t$'),
-                  ('n','$n_t$'),
-                  ('m','$m_t$'),
-                  ('c','$c_t$'),
-                  ('a','$a_t$'),
-                  ('discrete','adjuster share')]
+    simvarlist = [('p','(A): Permanent income, $p_t$'),
+                  ('n','(B): Housing stock, $n_t$'),
+                  ('m','(C): Cash-on-hand, $m_t$'),
+                  ('c','(D): Consumption, ,$c_t$'),
+                  ('a','(E): Savings, ,$a_t$'),
+                  ('discrete','(F): ,Adjuster share')]
 
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
 
         ax = fig.add_subplot(3,2,i+1)
 
-        simdata = getattr(sim,simvar)[:par.T,:]
+        simdata = getattr(sim,simvar+'_rand')[:par.T,:]
 
-        ax.plot(age,np.mean(simdata,axis=1),lw=2)
-        if simvar not in ['discrete']:
-            ax.plot(age,np.percentile(simdata,25,axis=1),
-                ls='--',lw=1,color='black')
-            ax.plot(age,np.percentile(simdata,75,axis=1),
-                ls='--',lw=1,color='black')
+        # mean graph
+        ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
+
+        # quantile graphs 
+        ax.plot(age,np.percentile(simdata,90,axis=1),
+            ls='--',lw=1,color='purple', label='90% quantile')
+        ax.plot(age,np.percentile(simdata,75,axis=1),
+            ls='--',lw=1,color='black', label='75% quantile')
+        ax.plot(age,np.percentile(simdata,50,axis=1),
+            ls='--',lw=1,color='orange', label='50% quantile')
+        ax.plot(age,np.percentile(simdata,25,axis=1),
+            ls='--',lw=1,color='red', label='25% quantile')
+        ax.plot(age,np.percentile(simdata,10,axis=1),
+            ls='--',lw=1,color='green', label='10% quantile')
+        
         ax.set_title(simvarlatex)
         if par.T > 10:
             ax.xaxis.set_ticks(age[::5])
@@ -269,62 +278,9 @@ def lifecycle(model):
         if simvar in ['a','discrete']:
             ax.set_xlabel('age')
 
-    plt.show()
+        if simvar in ['p']:
+            legend = ax.legend(frameon=True,prop={'size': 8})
+            frame = legend.get_frame()
+            frame.set_edgecolor('black')
 
-def lifecycle_compare(model1,latex1,model2,latex2,do_euler_errors=False):
-
-    # a. unpack
-    par = model1.par
-    sim1 = model1.sim
-    sim2 = model2.sim
-
-    # b. figure
-    fig = plt.figure(figsize=(12,16))
-
-    simvarlist = [('p','$p_t$',None),
-                    ('n','$n_t$',None),
-                    ('m','$m_t$',None),
-                    ('c','$c_t$',None),
-                    ('d','$d_t$',None),
-                    ('a','$a_t$',None),
-                    ('discrete','adjuster share',None)]
-            
-    if do_euler_errors:
-        simvarlist.append(('euler_error_rel','avg. euler error',None))
-
-    age = np.arange(par.T)
-    for i,(simvar,simvarlatex,j) in enumerate(simvarlist):
-
-        ax = fig.add_subplot(4,2,i+1)
-
-        if simvar == 'euler_error_rel':
-
-            simdata = getattr(sim1,simvar)[:par.T-1,:]
-            ax.plot(age[:-1],np.nanmean(simdata,axis=1),lw=2,label=latex1)
-
-            simdata = getattr(sim2,simvar)[:par.T-1,:]
-            ax.plot(age[:-1],np.nanmean(simdata,axis=1),lw=2,label=latex2)
-
-        else:
-
-            simdata = getattr(sim1,simvar)[:par.T,:]
-            ax.plot(age,np.mean(simdata,axis=1),lw=2,label=latex1)
-
-            simdata = getattr(sim2,simvar)[:par.T,:]
-            ax.plot(age,np.mean(simdata,axis=1),lw=2,label=latex2)
-
-        ax.set_title(simvarlatex)
-        if par.T > 10:
-            ax.xaxis.set_ticks(age[::5])
-        else:
-            ax.xaxis.set_ticks(age)
-
-        ax.grid(True)
-        if simvar in ['discrete','euler_error_rel']:
-            if simvar == 'discrete' and not j == 3:
-                continue
-            ax.set_xlabel('age')
-    
-        ax.legend()
-        
     plt.show()

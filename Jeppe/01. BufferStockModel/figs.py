@@ -64,11 +64,14 @@ def lifecycle(model):
 
         simdata = getattr(sim,simvar+'_rand')[:par.T,:]
 
+        # mean graph
+        ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
+
+        # quantile graphs 
         ax.plot(age,np.percentile(simdata,90,axis=1),
             ls='--',lw=1,color='purple', label='90% quantile')
         ax.plot(age,np.percentile(simdata,75,axis=1),
             ls='--',lw=1,color='black', label='75% quantile')
-        ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
         ax.plot(age,np.percentile(simdata,50,axis=1),
             ls='--',lw=1,color='orange', label='50% quantile')
         ax.plot(age,np.percentile(simdata,25,axis=1),
