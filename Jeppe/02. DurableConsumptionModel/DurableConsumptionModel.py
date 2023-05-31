@@ -67,26 +67,26 @@ class DurableConsumptionModelClass(ModelClass):
         par.L[par.Tr-1] = 0.67 # drop in permanent income at retirement age
 
         # tax (extension)
-        par.tax_rate = 0.3 # tax rate
+        par.tax_rate = 0.51 # tax rate
         par.tax_rate_vec = par.tax_rate * np.ones(par.T) # allows for tax policies
         
         # preferences
-        par.beta = 0.96
+        par.beta = 0.95
         par.Delta_dispersion = 0.02
         par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3)
         par.rho = 2.0
         par.alpha = 0.9
-        par.d_ubar = 1e-2
+        par.d_ubar = 4e-3
 
         # returns and income
-        par.R = 1.03
+        par.R = 1.01
         par.tau = 0.10
         par.delta = 0.15
 
         par.sigma_psi = 0.1
-        par.Npsi = 5
+        par.Npsi = 5 # discretized points in distribution
         par.sigma_xi = 0.1
-        par.Nxi = 5
+        par.Nxi = 5 # discretized points in distribution
         par.pi = 0.0
         par.mu = 0.5
         
