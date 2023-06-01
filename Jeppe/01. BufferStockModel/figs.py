@@ -52,14 +52,13 @@ def lifecycle(model):
     # b. figure
     fig = plt.figure(figsize=(12,12))
 
-    simvarlist = [('p','(A): Permanent income, $p_t$'),
-                  ('m','(B): Cash-on-hand, $m_t$'),
+    simvarlist = [('p','(A): Permanent Income, $p_t$'),
+                  ('m','(B): Cash-on-Hand, $m_t$'),
                   ('c','(C): Consumption, $c_t$'),
                   ('a','(D): Savings, $a_t$')]
 
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
-
         ax = fig.add_subplot(3,2,i+1)
 
         simdata = getattr(sim,simvar+'_rand')[:par.T,:]
@@ -93,13 +92,14 @@ def lifecycle(model):
         ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
         ax.grid(True)
-        if simvar in ['c','a']:
-            ax.set_xlabel('age')
+        ax.set_xlabel('Age')
 
         if simvar in ['p']:
             legend = ax.legend(frameon=True,prop={'size': 8})
             frame = legend.get_frame()
             frame.set_edgecolor('black')
+            
+    plt.subplots_adjust(hspace=0.27)  
             
     plt.savefig("one_asset_lifecycle_plot.pdf", bbox_inches='tight')
 

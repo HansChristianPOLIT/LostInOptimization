@@ -236,12 +236,12 @@ def lifecycle(model):
     par = model.par
     sim = model.sim
 
-    simvarlist = [('p','(A): Permanent income, $p_t$'),
-                  ('n','(B): Housing stock, $n_t$'),
-                  ('m','(C): Cash-on-hand, $m_t$'),
-                  ('c','(D): Consumption, ,$c_t$'),
-                  ('a','(E): Savings, ,$a_t$'),
-                  ('discrete','(F): ,Adjuster share')]
+    simvarlist = [('p','(A): Permanent Income, $p_t$'),
+                  ('n','(B): Housing Stock, $n_t$'),
+                  ('m','(C): Cash-on-Hand, $m_t$'),
+                  ('c','(D): Consumption, $c_t$'),
+                  ('a','(E): Savings, $a_t$'),
+                  ('discrete','(F): Adjuster Share')]
 
     # b. figure
     fig, axs = plt.subplots(2, 3, figsize=(12, 12))
@@ -274,7 +274,7 @@ def lifecycle(model):
         ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
         ax.grid(True)
-        ax.set_xlabel('age')
+        ax.set_xlabel('Age')
         legend = ax.legend(frameon=True,prop={'size': 8})
         frame = legend.get_frame()
         frame.set_edgecolor('black')
@@ -291,15 +291,15 @@ def lifecycle_rand(model):
     sim = model.sim
 
     # b. figure
-    fig = plt.figure(figsize=(12,12))
+    fig = plt.figure(figsize=(14,16))
 
-    simvarlist = [('p','(A): Permanent income, $p_t$'),
-                  ('n','(B): Housing stock, $n_t$'),
-                  ('d','Household decision, $d_t$'),
-                  ('m','(C): Cash-on-hand, $m_t$'),
-                  ('c','(D): Consumption, $c_t$'),
-                  ('a','(E): Savings, $a_t$'),
-                  ('discrete','(F): Adjuster share (in percent)')]
+    simvarlist = [('p','(A): Permanent Income, $p_t$'),
+                  ('n','(B): Housing Stock, $n_t$'),
+                  ('d','(C): Choice of Housing Stock, $d_t$'),
+                  ('m','(D): Cash-on-Hand, $m_t$'),
+                  ('c','(E): Consumption, $c_t$'),
+                  ('a','(F): Savings, $a_t$'),
+                  ('discrete','(G): Adjuster Share (in Percent)')]
 
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
@@ -341,15 +341,18 @@ def lifecycle_rand(model):
         ax.set_xlim(-3, 62)  # increase the upper limit of x-axis
 
         ax.grid(True)
-        if simvar in ['a','discrete']:
-            ax.set_xlabel('age')
+        ax.set_xlabel('Age')
 
         if simvar == 'discrete':
-            ax.set_ylabel('percent')
+            ax.set_ylabel('Percent')
 
         if simvar in ['p']:
             legend = ax.legend(frameon=True,prop={'size': 8})
             frame = legend.get_frame()
             frame.set_edgecolor('black')
+            
+    plt.subplots_adjust(hspace=0.29)  
+    
+    plt.savefig("two_asset_lifecycle_plot.pdf", bbox_inches='tight')
 
     plt.show()
