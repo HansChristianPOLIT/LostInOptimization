@@ -238,13 +238,14 @@ def lifecycle(model):
 
     simvarlist = [('p','(A): Permanent Income, $p_t$'),
                   ('n','(B): Housing Stock, $n_t$'),
-                  ('m','(C): Cash-on-Hand, $m_t$'),
-                  ('c','(D): Consumption, $c_t$'),
-                  ('a','(E): Savings, $a_t$'),
-                  ('discrete','(F): Adjuster Share')]
+                  ('d','(C): Housing Stock Chosen, $d_t$'),
+                  ('m','(D): Cash-on-Hand, $m_t$'),
+                  ('c','(E): Consumption, $c_t$'),
+                  ('a','(F): Savings, $a_t$'),
+                  ('discrete','(G): Adjuster Share')]
 
     # b. figure
-    fig, axs = plt.subplots(2, 3, figsize=(12, 12))
+    fig, axs = plt.subplots(3, 3, figsize=(12, 12))
 
     age = np.arange(par.T)
     for i, (simvar, simvarlatex) in enumerate(simvarlist): # Loop over different simulation variables
@@ -295,7 +296,7 @@ def lifecycle_rand(model):
 
     simvarlist = [('p','(A): Permanent Income, $p_t$'),
                   ('n','(B): Housing Stock, $n_t$'),
-                  ('d','(C): Choice of Housing Stock, $d_t$'),
+                  ('d','(C): Housing Stock Chosen, $d_t$'),
                   ('m','(D): Cash-on-Hand, $m_t$'),
                   ('c','(E): Consumption, $c_t$'),
                   ('a','(F): Savings, $a_t$'),
