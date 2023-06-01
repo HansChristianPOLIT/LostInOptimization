@@ -196,6 +196,8 @@ class DurableConsumptionModelClass(ModelClass):
     def precompile_numba(self):
         """ solve the model with very coarse grids and simulate with very few persons"""
 
+        print('precompiling numba functions')
+
         par = self.par
 
         tic = time.time()
@@ -236,6 +238,8 @@ class DurableConsumptionModelClass(ModelClass):
         if par.do_print:
             print(f'numba precompiled in {toc-tic:.1f} secs')
 
+        print('numba precompile done')
+
     def solve_prep(self):
         """ allocate memory for solution """
 
@@ -271,14 +275,16 @@ class DurableConsumptionModelClass(ModelClass):
         
         """
 
+        print('solving the model')
+
         tic = time.time()
 
         # backwards induction
         for t in reversed(range(self.par.T)):
-            print(t)
+            print("Period: "+ str(t))
             
             for b in range(len(self.par.Betas)):  # iterate over beta indices
-                print(b)
+                print("Beta index: " + str(b))
                            
                 beta = self.par.Betas[b]  # set the current beta value
                 
@@ -449,7 +455,7 @@ class DurableConsumptionModelClass(ModelClass):
                 sol = model.sol
                 sim = model.sim
 
-                simulate.euler_errors(sim,sol,par,beta)
+                simulate.euler_errors(sim,sol,par)
             
             sim.euler_error_rel[:] = norm_euler_errors(self)
         
