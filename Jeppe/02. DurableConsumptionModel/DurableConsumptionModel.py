@@ -69,25 +69,26 @@ class DurableConsumptionModelClass(ModelClass):
         # tax (extension)
         par.tax_rate = 0.51 # tax rate
         par.tax_rate_vec = par.tax_rate * np.ones(par.T) # allows for tax policies
+        par.eps = 0.0065648 # deduced tax rebate from Kaplan & Violante 2022
         
         # preferences
         par.beta = 0.95
-        par.Delta_dispersion = 0.02
-        par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3)
-        par.rho = 2.0
-        par.alpha = 0.9
-        par.d_ubar = 4e-3
+        par.Delta_dispersion = 0.02 # dispersion capturing difference in time preferences
+        par.Betas = np.linspace(par.beta - par.Delta_dispersion,par.beta + par.Delta_dispersion, num=3) # uniformly distributed time preferences
+        par.rho = 2.0 # CRRA coefficient
+        par.alpha = 0.9 # allocation to consumption good
+        par.d_ubar = 4e-3 # housing "floor" 
 
         # returns and income
-        par.R = 1.03
-        par.tau = 0.10
-        par.delta = 0.15
+        par.R = 1.03 # gross interest rate 
+        par.tau = 0.10 # adjustment cost
+        par.delta = 0.15 # depreciation rate
 
         par.sigma_psi = 0.1
         par.Npsi = 5 # discretized points in distribution
         par.sigma_xi = 0.1
         par.Nxi = 5 # discretized points in distribution
-        par.pi = 0.0
+        par.pi = 0.0 # no unemployment shock
         par.mu = 0.5
         
         # grids
@@ -109,7 +110,7 @@ class DurableConsumptionModelClass(ModelClass):
         par.sigma_d0 = 0.2
         par.mu_a0 = 0.2
         par.sigma_a0 = 0.1
-        par.simN = 100000
+        par.simN = 100_000
         par.sim_seed = 1998
         par.euler_cutoff = 0.02
 
@@ -246,14 +247,15 @@ class DurableConsumptionModelClass(ModelClass):
         par = self.par
         sol = self.sol
 
-        # a. standard
+        # a. allocate keep
         num_betas = len(par.Betas)
         keep_shape = (par.T,num_betas,par.Np,par.Nn,par.Nm)
         
         sol.c_keep = np.zeros(keep_shape)
         sol.inv_v_keep = np.zeros(keep_shape)
         sol.inv_marg_u_keep = np.zeros(keep_shape)
-
+        
+        # b. allocate adjust
         adj_shape = (par.T,num_betas,par.Np,par.Nx)
         sol.d_adj = np.zeros(adj_shape)
         sol.c_adj = np.zeros(adj_shape)
@@ -265,7 +267,7 @@ class DurableConsumptionModelClass(ModelClass):
         sol.q = np.nan*np.zeros(post_shape)
         sol.q_c = np.nan*np.zeros(post_shape)
         sol.q_m = np.nan*np.zeros(post_shape)
-
+        
     def solve(self,do_assert=True):
         """ solve the model
         
@@ -397,6 +399,10 @@ class DurableConsumptionModelClass(ModelClass):
         sim.c = np.zeros(sim_shape)
         sim.a = np.zeros(sim_shape)
         sim.y = np.zeros(sim_shape)
+        
+        # MPC
+        sim.mpc = np.nan*np.zeros(sim_shape)
+        sim.c_eps = np.zeros(sim_shape)
         
         # c. euler
         euler_shape = (par.T-1,len(par.Betas),par.simN)

@@ -22,6 +22,10 @@ def lifecycle(sim,sol,par):
     y = sim.y
     discrete = sim.discrete
     
+    # MPC 
+    mpc = sim.mpc
+    c_eps = sim.c_eps
+    
     for t in range(par.T):
         for b in range(len(par.Betas)):
             for i in prange(par.simN):
@@ -39,18 +43,24 @@ def lifecycle(sim,sol,par):
                 y[t,b,i] = p[t,b,i] * sim.xi[t,i]
 
                 # b. optimal choices and post decision states
-                optimal_choice(t,b,p[t,b,i],n[t,b,i],m[t,b,i],discrete[t,b,i:],d[t,b,i:],c[t,b,i:],a[t,b,i:],sol,par)
+                optimal_choice(i,t,b,p[t,b,i],n[t,b,i],m[t,b,i],discrete[t,b,i:],d[t,b,i:],c[t,b,i:],a[t,b,i:],sol,par,mpc[t,b,i:],c_eps[t,b,i:])
 
             
 @njit            
-def optimal_choice(t,b,p,n,m,discrete,d,c,a,sol,par):
+def optimal_choice(i,t,b,p,n,m,discrete,d,c,a,sol,par,mpc,c_eps):
 
     x = trans.x_plus_func(m,n,par)
+    x_eps = trans.x_plus_func(m+par.eps,n,par)
 
-    # a. discrete choice
+# a. discrete choice
     inv_v_keep = linear_interp.interp_3d(par.grid_p,par.grid_n,par.grid_m,sol.inv_v_keep[t,b],p,n,m)
-    inv_v_adj = linear_interp.interp_2d(par.grid_p,par.grid_x,sol.inv_v_adj[t,b],p,x)    
+    inv_v_keep_eps = linear_interp.interp_3d(par.grid_p,par.grid_n,par.grid_m,sol.inv_v_keep[t,b],p,n,m+par.eps)
+    inv_v_adj = linear_interp.interp_2d(par.grid_p,par.grid_x,sol.inv_v_adj[t,b],p,x)
+    inv_v_adj_eps = linear_interp.interp_2d(par.grid_p,par.grid_x,sol.inv_v_adj[t,b],p,x_eps)
+
+    # condition to check if one should adjust
     adjust = inv_v_adj > inv_v_keep
+    adjust_eps = inv_v_adj_eps > inv_v_keep_eps
     
     # b. continuous choices
     if adjust:
@@ -66,13 +76,34 @@ def optimal_choice(t,b,p,n,m,discrete,d,c,a,sol,par):
             p,x)
 
         tot = d[0]+c[0]
+        
         if tot > x: 
             d[0] *= x/tot
             c[0] *= x/tot
             a[0] = 0.0
         else:
             a[0] = x - tot
-            
+        
+        # compute MPC
+        
+        # Interpolate c_eps for the adjuster
+        c_eps[0] = linear_interp.interp_2d(par.grid_p,par.grid_x,sol.c_adj[t,b],p,x_eps)
+
+        # Compute the total amount
+        tot = d[0] + c_eps[0]
+
+        # Adjust values based on the total amount
+        if tot > (x + par.eps): 
+            d[0] *= (x + par.eps) / tot
+            c_eps[0] *= (x + par.eps) / tot
+            a[0] = 0.0
+        else:
+            a[0] = (x + par.eps) - tot
+
+        # Compute mpc
+        mpc[0] = (c_eps[0] - c[0]) / par.eps
+
+    # keep
     else: 
             
         discrete[0] = 0
@@ -87,7 +118,19 @@ def optimal_choice(t,b,p,n,m,discrete,d,c,a,sol,par):
             c[0] = m
             a[0] = 0.0
         else:
-            a[0] = m - c[0]     
+            a[0] = m - c[0]   
+            
+        # compute MPC
+        c_eps[0] = linear_interp.interp_3d(par.grid_p,par.grid_n,par.grid_m,sol.c_keep[t,b],
+                p,n,m+par.eps)
+
+        if c_eps[0] > (m+par.eps): 
+            c_eps[0] = m+par.eps
+            a[0] = 0.0
+        else:
+            a[0] = m + par.eps - c_eps[0]
+
+        mpc[0] = (c_eps[0] - c[0]) / par.eps   
             
 
 @njit            
