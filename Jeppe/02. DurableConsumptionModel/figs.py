@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
+import os
 sns.set_style("whitegrid")
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
@@ -284,6 +285,11 @@ def lifecycle(model):
     plt.tight_layout()
     plt.show()
 
+    if not os.path.exists("../plots"):
+        os.makedirs("../plots")
+    
+    plt.savefig("../plots/two_asset_Lifecycle_sepBeta.pdf", bbox_inches='tight')
+
     
 def lifecycle_rand(model):
 
@@ -353,7 +359,10 @@ def lifecycle_rand(model):
             frame.set_edgecolor('black')
             
     plt.subplots_adjust(hspace=0.29)  
+
+    if not os.path.exists("../plots"):
+        os.makedirs("../plots")
     
-    plt.savefig("two_asset_lifecycle_plot.pdf", bbox_inches='tight')
+    plt.savefig("../plots/two_asset_lifecycle_plot.pdf", bbox_inches='tight')
 
     plt.show()
