@@ -83,6 +83,8 @@ class DurableConsumptionModelClass(ModelClass):
         par.R = 1.03 # gross interest rate 
         par.tau = 0.10 # adjustment cost
         par.delta = 0.15 # depreciation rate
+        par.R_premium = 0.05 # interest premium/spread
+        par.R_housing = 1.00 # default value
 
         par.sigma_psi = 0.1
         par.Npsi = 5 # discretized points in distribution
@@ -281,12 +283,12 @@ class DurableConsumptionModelClass(ModelClass):
 
         tic = time.time()
 
-        # backwards induction
+         # backwards induction
         for t in reversed(range(self.par.T)):
-            print("Period: "+ str(t))
-            
+            if t % 10 == 0:  # print only if t is divisible by 10
+                print("Period: "+ str(t))
+
             for b in range(len(self.par.Betas)):  # iterate over beta indices
-                print("Beta index: " + str(b))
                            
                 beta = self.par.Betas[b]  # set the current beta value
                 

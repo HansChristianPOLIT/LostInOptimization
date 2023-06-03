@@ -243,14 +243,17 @@ def lifecycle(model):
                   ('m','(D): Cash-on-Hand, $m_t$'),
                   ('c','(E): Consumption, $c_t$'),
                   ('a','(F): Savings, $a_t$'),
-                  ('discrete','(G): Adjuster Share')]
+                  ('discrete','(G): Adjuster Share (in Percent)')]
 
     # b. figure
-    fig, axs = plt.subplots(3, 3, figsize=(12, 12))
+    fig, axs = plt.subplots(2, 4, figsize=(16, 8))
+
+    # c. beta mapping
+    beta_map = {0: 0.93, 1: 0.95, 2: 0.97}
 
     age = np.arange(par.T)
     for i, (simvar, simvarlatex) in enumerate(simvarlist): # Loop over different simulation variables
-        ax = axs[i // 3, i % 3]  # specify the current subplot
+        ax = axs[i // 4, i % 4]  # specify the current subplot
 
         for b in range(len(par.Betas)): # Loop over different beta values
             # get simulation data for this beta value
@@ -258,9 +261,13 @@ def lifecycle(model):
 
             # calculate mean over individual dimension for each beta
             mean_data = np.mean(simdata, axis=1)
+            
+            if simvar == 'discrete':
+                mean_data *= 100  # Convert to percentage
 
             # plot mean data
-            ax.plot(age, mean_data, label=f'{simvarlatex}, Beta {b+1}')
+            ax.plot(age, mean_data, label=r'$\beta=$' + str(beta_map[b]))
+            
 
         ax.set_title(simvarlatex)
         if par.T > 10:
@@ -277,18 +284,28 @@ def lifecycle(model):
 
         ax.grid(True)
         ax.set_xlabel('Age')
-        legend = ax.legend(frameon=True,prop={'size': 8})
-        frame = legend.get_frame()
-        frame.set_edgecolor('black')
+        
+        if simvar == 'discrete':
+            ax.set_ylabel('Percent')
+            
+        if simvar in ['p']:
+            legend = ax.legend(frameon=True,prop={'size': 8})
+            frame = legend.get_frame()
+            frame.set_edgecolor('black')
+            
+    # remove the last, empty subplot if there is one
+    if len(simvarlist) < np.prod(axs.shape):
+        fig.delaxes(axs.flatten()[len(simvarlist)])
 
     # adjust layout for better visualization
     plt.tight_layout()
-    plt.show()
 
     if not os.path.exists("../plots"):
         os.makedirs("../plots")
     
     plt.savefig("../plots/two_asset_Lifecycle_sepBeta.pdf", bbox_inches='tight')
+    
+    plt.show()
 
     
 def lifecycle_rand(model):
@@ -298,7 +315,7 @@ def lifecycle_rand(model):
     sim = model.sim
 
     # b. figure
-    fig = plt.figure(figsize=(14,16))
+    fig, axs = plt.subplots(2, 4, figsize=(16,8))
 
     simvarlist = [('p','(A): Permanent Income, $p_t$'),
                   ('n','(B): Housing Stock, $n_t$'),
@@ -311,14 +328,14 @@ def lifecycle_rand(model):
     age = np.arange(par.T)
     for i,(simvar,simvarlatex) in enumerate(simvarlist):
 
-        ax = fig.add_subplot(4,2,i+1)
+        ax = axs[i // 4, i % 4]  # specify the current subplot
 
         simdata_raw = getattr(sim,simvar)[:par.T,:]  # get the raw simulation data
         simdata = np.mean(simdata_raw, axis=1)  # aggregate over the second dimension
-
+        
         if simvar == 'discrete':
             simdata *= 100  # Convert to percentage
-
+            
         # mean graph
         ax.plot(age,np.mean(simdata,axis=1),lw=2, label = 'mean')
 
@@ -352,13 +369,18 @@ def lifecycle_rand(model):
 
         if simvar == 'discrete':
             ax.set_ylabel('Percent')
+            
 
         if simvar in ['p']:
             legend = ax.legend(frameon=True,prop={'size': 8})
             frame = legend.get_frame()
             frame.set_edgecolor('black')
             
-    plt.subplots_adjust(hspace=0.29)  
+    # remove the last, empty subplot if there is one
+    if len(simvarlist) < np.prod(axs.shape):
+        fig.delaxes(axs.flatten()[len(simvarlist)])
+
+    plt.subplots_adjust(hspace=0.29, wspace=0.3)  
 
     if not os.path.exists("../plots"):
         os.makedirs("../plots")

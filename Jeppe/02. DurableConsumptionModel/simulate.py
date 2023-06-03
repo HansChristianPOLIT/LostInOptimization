@@ -90,15 +90,15 @@ def optimal_choice(i,t,b,p,n,m,discrete,d,c,a,sol,par,mpc,c_eps):
         c_eps[0] = linear_interp.interp_2d(par.grid_p,par.grid_x,sol.c_adj[t,b],p,x_eps)
 
         # Compute the total amount
-        tot = d[0] + c_eps[0]
+        #tot = d[0] + c_eps[0]
 
         # Adjust values based on the total amount
-        if tot > (x + par.eps): 
-            d[0] *= (x + par.eps) / tot
-            c_eps[0] *= (x + par.eps) / tot
-            a[0] = 0.0
-        else:
-            a[0] = (x + par.eps) - tot
+        #if tot > (x + par.eps): 
+        #    d[0] *= (x + par.eps) / tot
+        #    c_eps[0] *= (x + par.eps) / tot
+        #    a[0] = 0.0
+        #else:
+        #    a[0] = (x + par.eps) - tot
 
         # Compute mpc
         mpc[0] = (c_eps[0] - c[0]) / par.eps
@@ -124,11 +124,11 @@ def optimal_choice(i,t,b,p,n,m,discrete,d,c,a,sol,par,mpc,c_eps):
         c_eps[0] = linear_interp.interp_3d(par.grid_p,par.grid_n,par.grid_m,sol.c_keep[t,b],
                 p,n,m+par.eps)
 
-        if c_eps[0] > (m+par.eps): 
-            c_eps[0] = m+par.eps
-            a[0] = 0.0
-        else:
-            a[0] = m + par.eps - c_eps[0]
+        #if c_eps[0] > (m+par.eps): 
+        #    c_eps[0] = m+par.eps
+        #    a[0] = 0.0
+        #else:
+        #    a[0] = m + par.eps - c_eps[0]
 
         mpc[0] = (c_eps[0] - c[0]) / par.eps   
             
