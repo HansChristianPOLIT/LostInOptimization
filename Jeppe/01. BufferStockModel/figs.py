@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+import os
 plt.style.use("seaborn-whitegrid")
 prop_cycle = plt.rcParams["axes.prop_cycle"]
 colors = prop_cycle.by_key()["color"]
@@ -49,17 +50,17 @@ def lifecycle(model):
     par = model.par
     sim = model.sim
 
-    # b. figure
-    fig = plt.figure(figsize=(12,12))
-
     simvarlist = [('p','(A): Permanent Income, $p_t$'),
                   ('m','(B): Cash-on-Hand, $m_t$'),
                   ('c','(C): Consumption, $c_t$'),
                   ('a','(D): Savings, $a_t$')]
 
+    # b. figure
+    fig, axs = plt.subplots(1, 4, figsize=(4*4, 4))
+
     age = np.arange(par.T)
-    for i,(simvar,simvarlatex) in enumerate(simvarlist):
-        ax = fig.add_subplot(3,2,i+1)
+    for i, (simvar, simvarlatex) in enumerate(simvarlist):
+        ax = axs[i]  # specify the current subplot
 
         simdata = getattr(sim,simvar+'_rand')[:par.T,:]
 
@@ -98,10 +99,13 @@ def lifecycle(model):
             legend = ax.legend(frameon=True,prop={'size': 8})
             frame = legend.get_frame()
             frame.set_edgecolor('black')
-            
-    plt.subplots_adjust(hspace=0.27)  
-            
-    plt.savefig("one_asset_lifecycle_plot.pdf", bbox_inches='tight')
+
+    plt.tight_layout()
+
+    if not os.path.exists("../plots"):
+        os.makedirs("../plots")
+    
+    plt.savefig("../plots/one_asset_lifecycle_plot.pdf", bbox_inches='tight')
 
     plt.show()
 
